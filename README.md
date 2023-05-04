@@ -92,10 +92,14 @@ Some useful `make` commands:
 
 ## Project Structure
 
-- `cast_main`: the main project, containing the STLC + full-iso type system described above
+Proved sound projects:
+
+- `cast_main`: the main project, containing the STLC + full-iso type system described above 
 - `cast_det`: does not define a cast language, the casting relation is a deterministic cast relation. This system is too weak to achieve the goal of this project.
 - `cast_rcd`: extend `cast_main` with merges and single field records (but without subtyping)
 
+Ongoing projects:
+- ...
 
 ## TODO:
 

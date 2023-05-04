@@ -90,4 +90,18 @@ Some useful `make` commands:
 - `make` will build all the Coq proofs
 
 
+## Project Structure
+
+- `cast_main`: the main project, containing the STLC + full-iso type system described above
+- `cast_det`: does not define a cast language, the casting relation is a deterministic cast relation. This system is too weak to achieve the goal of this project.
+- `cast_rcd`: extend `cast_main` with merges and single field records (but without subtyping)
+
+
+## TODO:
+
+- [ ] Attempt 1: Start from `cast_main`, create a new project, add `c ::= ... | c1 . c2` (and related typing/reduction rules) into the system. Prove progress/preservation.
+- [ ] Attempt 2: Do not change the current syntax, prove that for any equal `A ~ B` types in equi-recursive type system, we can find a list of casts `A ~~>* B : [c...]` in our system `cast_main`.
+- [ ] Future work: add recursive subtyping into the system.
+
+
 

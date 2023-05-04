@@ -45,7 +45,7 @@ VOFILES  = $(foreach i, $(FILES), $(i).vo)
 
 ############################################################################
 
-.PHONY: all clean coq dist doc documentation rebuild pdf
+.PHONY: all clean coq dist doc documentation rebuild pdf rules
 .SUFFIXES: .v .vo
 
 all: coq
@@ -70,13 +70,15 @@ clean:
 realclean: clean
 	rm -f $(OTT_SOURCE)_ott.v $(OTT_SOURSE)_inf.v
 
+rules: $(DOC_LOC)/rules.tex syntax_ott.v
+
 ############################################################################
 # ott related
 
 rebuild: syntax_ott.v rules_inf.v
 
-syntax_ott.v: $(OTT_LOC)/rules.ott $(OTT_LOC)/reduction.ott
-	$(OTT)  $(OTT_LOC)/rules.ott $(OTT_LOC)/reduction.ott -coq_lngen true -coq_expand_list_types true -coq_names_in_rules false -o $@
+syntax_ott.v: $(OTT_LOC)/rules.ott
+	$(OTT)  $(OTT_LOC)/rules.ott -coq_lngen true -coq_expand_list_types true -coq_names_in_rules false -o $@
 	@if grep '<<no parses (' $@ >/dev/null 2>&1 && \
 	[ -z "$(DONTSTOP)" ]; then \
 		echo; \

@@ -110,13 +110,25 @@ Moreover, this work also draws connections between the iso-recursive type system
 
 2. Make sure `Coq` is installed, then install `Metalib`:
    1. Open terminal
-   2. `git clone https://github.com/plclub/metalib`
+   2. `git clone -b coq8.10 https://github.com/plclub/metalib`
    3. `cd metalib/Metalib`
    4. `make install`
 
-3. Install `Ott 0.32` (if you want to rewrite the rules):
-   Check the [Ott website](https://www.cl.cam.ac.uk/~pes20/ott/top2.html#sec7) for detailed instructions.
-   Remember to switch to the correct version of `Ott 0.32` during the installation process.
+3. Make sure `Haskell` with `stack` is installed, then install `LNgen`:
+   1. Open terminal
+   2. `git clone https://github.com/plclub/lngen`
+   3. `cd lngen`
+   4. `stack install`
+
+4. Install `Ott 0.32` if you want to rewrite the rules. Make sure `opam` is installed:
+   1. Open terminal
+   2. `git clone https://github.com/sweirich/ott`
+   3. `cd ott`
+   4. `opam pin add ott .`
+   5. `opam repo add coq-released https://coq.inria.fr/opam/released`
+   6. `opam pin add coq-ott 0.32`
+
+   Check the [Ott website](https://www.cl.cam.ac.uk/~pes20/ott/top2.html#sec7) for detailed instructions. Remember to switch to the correct [forked version](https://github.com/sweirich/ott) of `Ott 0.32` during the installation process.
 
 
 ### Build Each Project

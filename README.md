@@ -20,15 +20,18 @@ Ongoing projects:
 
 ## TODO:
 
-- [ ] The type safety for `cast_main_ext`
+- [x] The type safety for `cast_main_ext`
 - [ ] Typing equivalence to the equi-recursive type system
-  - [ ] If `G |-i E : A` then `G |- e |E| : A`
+  - [x] If `G |-i E : A` then `G |- e |E| : A`
   - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
 - [ ] Behavioral equivalence to the equi-recursive type system
   - [x] If `E -->i E'` then `|E| -->e* |E'|`
   - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
 - [ ] Full-iso causes no computation overhead
   - [ ] If `⋅ |- e : T ▷ E` then `|E| = e` 
+- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
+
+
 
 
 ## Related work

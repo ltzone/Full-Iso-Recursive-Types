@@ -2,6 +2,33 @@
 Extending iso-recursive type systems (with unfold/folds) to a more generalized form via casting
 
 
+## TODO and TIMELINE
+
+
+- [ ] soundness and completeness of eqe (@Qianyong)
+- [ ] framework of the rest of the lemmas
+
+
+- [ ] completeness of `Coinductive Tyeq -> eqe` (@Litao) ~ 2 weeks
+- [ ] add subtyping (amber style)
+- [ ] formalize `equi-recursive typing -> full iso terms`
+- [ ] reduction preservation
+
+
+- [x] The type safety for `cast_main_ext`
+- [ ] Typing equivalence to the equi-recursive type system
+  - [x] If `G |-i E : A` then `G |- e |E| : A`
+  - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
+- [ ] Behavioral equivalence to the equi-recursive type system
+  - [x] If `E -->i E'` then `|E| -->e* |E'|`
+  - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
+- [ ] Full-iso causes no computation overhead
+  - [ ] If `⋅ |- e : T ▷ E` then `|E| = e` 
+- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
+
+
+
+
 
 ## Project Structure
 
@@ -16,20 +43,6 @@ Proved sound projects:
 Ongoing projects:
 - `cast_main_ext`: `cast_main` + sequential casts + fixpoint casts
 
-
-
-## TODO:
-
-- [x] The type safety for `cast_main_ext`
-- [ ] Typing equivalence to the equi-recursive type system
-  - [x] If `G |-i E : A` then `G |- e |E| : A`
-  - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
-- [ ] Behavioral equivalence to the equi-recursive type system
-  - [x] If `E -->i E'` then `|E| -->e* |E'|`
-  - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
-- [ ] Full-iso causes no computation overhead
-  - [ ] If `⋅ |- e : T ▷ E` then `|E| = e` 
-- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
 
 
 

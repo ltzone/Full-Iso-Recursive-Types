@@ -10,9 +10,8 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
 
 
 - [ ] completeness of `Coinductive Tyeq -> eqe` (@Litao) ~ 2 weeks
-- [ ] add subtyping (amber style)
-- [ ] formalize `equi-recursive typing -> full iso terms`
-- [ ] reduction preservation
+- [ ] reduction preservation ~ 1/2 week
+- [ ] add subtyping (amber style) ~ 2 weeks
 
 
 - [x] The type safety for `cast_main_ext`
@@ -21,9 +20,12 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
   - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
 - [ ] Behavioral equivalence to the equi-recursive type system
   - [x] If `E -->i E'` then `|E| -->e* |E'|`
+  ~~- [ ] If `⋅ |- e : T` and `erase E = e` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T /\ erase E' = e' /\ E -->i* E'`~~
   - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
 - [ ] Full-iso causes no computation overhead
   - [ ] If `⋅ |- e : T ▷ E` then `|E| = e` 
+  - [ ] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V`
+  - [ ] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
 - [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
 
 

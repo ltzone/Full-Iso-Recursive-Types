@@ -4,29 +4,23 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
 
 ## TODO and TIMELINE
 
-
-- [ ] soundness and completeness of eqe (@Qianyong)
-- [ ] framework of the rest of the lemmas
-
-
-- [ ] completeness of `Coinductive Tyeq -> eqe` (@Litao) ~ 2 weeks
-- [ ] reduction preservation ~ 1/2 week
-- [ ] add subtyping (amber style) ~ 2 weeks
-
-
 - [x] The type safety for `cast_main_ext`
 - [ ] Typing equivalence to the equi-recursive type system
   - [x] If `G |-i E : A` then `G |- e |E| : A`
   - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
+    - [ ] completeness of `Coinductive Tyeq -> eqe` **(@Litao) ~ 2 weeks**
 - [ ] Behavioral equivalence to the equi-recursive type system
   - [x] If `E -->i E'` then `|E| -->e* |E'|`
   ~~- [ ] If `⋅ |- e : T` and `erase E = e` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T /\ erase E' = e' /\ E -->i* E'`~~
   - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
+     - [ ] need special canonical form lemmas **(@Qianyong) ~ 2 weeks**
 - [ ] Full-iso causes no computation overhead
-  - [ ] If `⋅ |- e : T ▷ E` then `|E| = e` 
-  - [ ] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V`
+  - [x] If `⋅ |- e : T ▷ E` then `|E| = e` 
+  - [ ] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
+        (direct if behavioral equivalence is proved)
   - [ ] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
 - [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
+  - [ ] add subtyping (amber style) **~ 2 weeks**
 
 
 

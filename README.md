@@ -10,9 +10,33 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
   - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
     - [ ] special treatment of cast operator substitution for `eqe -> TypCast` **(@Qianyong) ~ 1 week**
     - [ ] completeness of `Coinductive Tyeq -> eqe` **(@Litao) ~ 2 weeks**
+- [x] Behavioral equivalence to the equi-recursive type system
+  - [x] If `E -->i E'` then `|E| -->e* |E'|`
+  - [x] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
+- [ ] Full-iso causes no computation overhead
+  - [x] If `⋅ |- e : T ▷ E` then `|E| = e` 
+  - [x] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
+        (direct if behavioral equivalence is proved)
+  - [x] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
+- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
+  - [ ] add subtyping (amber style) **~ 2 weeks**
+
+
+## TODO for the system with subtyping 
+
+
+- [ ] The type safety for `cast_main_ext`
+  - [ ] progress and preservation if castop/rev_env adjusted
+- [ ] Subtyping equivalence between Iso-Amber rules (presented in TOPLAS, with well formedness) and equi-Amber rules (presented by Henglein)
+  - [x] `Iso -> Equi` (straightforward)
+  - [ ] 
+- [ ] Typing equivalence to the equi-recursive type system
+  - [x] If `G |-i E : A` then `G |- e |E| : A`
+  - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
+    - [ ] special treatment of cast operator substitution for `eqe -> TypCast` **(@Qianyong) ~ 1 week**
+    - [ ] completeness of `Coinductive Tyeq -> eqe` **(@Litao) ~ 2 weeks**
 - [ ] Behavioral equivalence to the equi-recursive type system
   - [x] If `E -->i E'` then `|E| -->e* |E'|`
-  ~~- [ ] If `⋅ |- e : T` and `erase E = e` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T /\ erase E' = e' /\ E -->i* E'`~~
   - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
      - [ ] need special canonical form lemmas **~ 2 weeks**
 - [ ] Full-iso causes no computation overhead
@@ -20,9 +44,6 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
   - [ ] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
         (direct if behavioral equivalence is proved)
   - [ ] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
-- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
-  - [ ] add subtyping (amber style) **~ 2 weeks**
-
 
 
 

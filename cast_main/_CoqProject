@@ -3,5 +3,10 @@
 LibTactics.v
 syntax_ott.v
 rules_inf.v
+subtyping.v
 progress.v
+erasure.v
+equiRec.v
 preservation.v
+subtheorems.v
+theorems.v

@@ -3,7 +3,7 @@ Require Import Metalib.Metatheory.
 Require Import Coq.Relations.Relation_Operators.
 Require Export LibTactics.
 
-Require Export preservation.
+Require Export progress.
 
 Fixpoint erase (t:exp) :=    
   match t with
@@ -30,6 +30,23 @@ Proof with auto.
     f_equal. rewrite IHe1...
   -
     rewrite IHe1_1. rewrite IHe1_2...
+Qed.
+
+
+Lemma erase_close_ee: forall x e, erase (close_exp_wrt_exp x e) = close_exp_wrt_exp x (erase e).
+Proof with auto.
+  unfold close_exp_wrt_exp.
+  intros. generalize 0.
+  induction e;intros;simpl...
+  - destruct (lt_dec n n0)...
+  -
+    destruct (x == t)...
+  -
+    f_equal. rewrite IHe...
+  -
+    f_equal. rewrite IHe...
+  -
+    rewrite IHe1. rewrite IHe2...
 Qed.
 
 Lemma erase_lc_exp: forall e, lc_exp e -> lc_exp (erase e).
@@ -108,7 +125,7 @@ Lemma soundness_erase: forall e1 e2,
   (erase e1) ==>* (erase e2).
 Proof with auto.
   intros.
-  induction H;simpl...
+  induction H;simpl; try apply rt_refl...
   - 
     rewrite erase_open_ee...
     apply rt_step.
@@ -124,12 +141,13 @@ Proof with auto.
     rewrite erase_open_ee.
     apply Red_fix...
     { apply erase_lc_exp in H0... }
-  -
-    apply rt_refl.
-  -
-    apply rt_refl.
-  -
-    apply rt_refl.
 Qed.
 
-    
+
+Lemma erase_fv: forall e, termfv_exp (erase e) [=] termfv_exp e.
+Proof with auto.
+  intros.
+  induction e; simpls;try reflexivity...
+  -
+    rewrite IHe1, IHe2. reflexivity.
+Qed.

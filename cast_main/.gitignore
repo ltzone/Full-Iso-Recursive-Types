@@ -1,3 +1,6 @@
+doc/rules.tex
+doc/main.pdf
+
 **/auto
 *.aux
 *.bbl
@@ -271,3 +274,5 @@ TSWLatexianTemp*
 
 # macOS
 .DS_Store
+
+.todo

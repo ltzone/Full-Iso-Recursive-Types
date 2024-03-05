@@ -1,0 +1,462 @@
+% grammar
+% invoking -merge true with -coq_lngen true will fail the latter option
+% formula :: 'formula_' ::=
+
+embed {{ coq
+
+Notation unfold_mu t := 
+    (open_typ_wrt_typ t (t_mu t)).
+
+
+CoInductive Tyeq: typ -> typ -> Prop :=
+| Tyeq_arrow: forall t1 t1' t2 t2', 
+    Tyeq t1 t1' -> 
+    Tyeq t2 t2' -> 
+    Tyeq (t_arrow t1 t2) (t_arrow t1' t2')
+| Tyeq_mu_l: forall t, 
+    Tyeq (t_mu t) (unfold_mu t)
+| Tyeq_mu_r: forall  t,
+    Tyeq (unfold_mu t) (t_mu t)
+| Tyeq_refl: forall t, Tyeq t t
+| Tyeq_trans: forall t1 t2 t3, 
+    Tyeq t1 t2 -> 
+    Tyeq t2 t3 -> 
+    Tyeq t1 t3
+.
+}}
+
+
+
+defns 
+SyntacticSubTerm  :: '' ::=
+
+defn
+
+A incl B ::  :: SynSub :: 'SSub_' 
+{{ com A is a Syntactic Subterm of B  }}
+{{ tex [[A]] \subset [[B]] }}
+
+by
+
+---------- :: refl
+A incl A
+
+
+A incl B [X |-> mu X. B]
+---------- :: unfold
+A incl mu X. B
+
+
+A incl B1
+--------- :: arrowL
+A incl B1 -> B2
+
+
+A incl B2
+--------- :: arrowR
+A incl B1 -> B2
+
+
+
+
+
+defns 
+BtmUpSyntacticSubTerm  :: '' ::=
+
+defn
+
+A bincl B ::  :: BtmUpSub :: 'BSub_' 
+{{ com A is a Bottom up Syntactic Subterm of B  }}
+{{ tex [[A]] \subset [[B]] }}
+
+by
+
+---------- :: refl
+A bincl A
+
+
+A [ X |-> X ] bincl B
+---------- :: unfold
+A [ X |-> mu X. B ] bincl mu X. B
+
+
+A bincl B1
+--------- :: arrowL
+A bincl B1 -> B2
+
+
+A bincl B2
+--------- :: arrowR
+A bincl B1 -> B2
+
+
+
+
+defns
+ACSubtyping :: '' ::=
+
+defn
+AE |- A <:. B :: :: ACSubtyping :: 'ACSub_'
+{{ com Amadio/Cardelli axiomatization of subtyping }}
+
+by
+
+----- :: top
+AE |- A <:. Top
+
+
+---- :: refl
+AE |- A <:. A
+
+
+AE |- A <:. B
+AE |- B <:. C
+---- :: trans
+AE |- A <:. C
+
+---- :: assump
+(AE1 , (X, Y) , AE2) |- X <:. Y
+
+
+A =. B
+------- :: eq
+AE |- A <:. B
+
+
+AE |- B1 <:. A1
+AE |- A2 <:. B2
+----- :: arrow
+AE |- A1 -> A2 <:. B1 -> B2
+
+AE, (X, Y) |- A <:. B
+------ :: rec
+AE |- mu X. A <:. mu Y. B
+
+
+
+
+
+defns
+ACSubtypingAlg :: '' ::=
+
+defn
+AE |-a A <:. B :: :: AACSubtyping :: 'AACSub_'
+{{ com Amadio/Cardelli axiomatization of subtyping }}
+
+by
+
+----- :: top
+AE |-a A <:. Top
+
+
+---- :: refl
+AE |-a A <:. A
+
+
+
+---- :: assump
+(AE1 , (X, Y) , AE2) |-a X <:. Y
+
+
+A =. B
+------- :: eq
+AE |-a A <:. B
+
+
+AE |-a B1 <:. A1
+AE |-a A2 <:. B2
+----- :: arrow
+AE |-a A1 -> A2 <:. B1 -> B2
+
+AE, (X, Y) |-a A <:. B
+------ :: rec
+AE |-a mu X. A <:. mu Y. B
+
+
+
+
+
+defns
+EquiTyping :: '' ::=
+
+defn
+D ; G |- e : A ::  :: EquiTyping :: 'ETyping_'
+{{ com Typing rules }}
+{{ tex D;  G \vdash_{e} e : A }}
+by
+
+
+|- D
+D |- G
+----------------- :: int
+D; G |- i : Int
+
+|- D
+D |- G
+x : A in G
+----::var
+D; G |- x : A
+
+
+D; G, x : A1 |- e : A2
+----::abs
+D; G |- \ x : A1 . e : A1 -> A2
+
+
+D; G |- e1 : A1 -> A2
+D; G |- e2 : A1
+----::app
+D; G |- e1 e2 : A2
+
+D; G, x : A |- e : A
+----::fix
+D; G |- fix x : A . e : A
+
+D; G |- e : A
+[] |- A <:. B
+----::sub
+D; G |- e : B
+
+
+
+defns
+algEq ::  '' ::=
+
+
+defn
+E |-a A == B : c ::  :: algEq :: 'aec_'
+{{ com Algorithmic Equivalence rules that generate casts }}
+{{ tex [[E]] \vdash_{a} [[A]] = [[B]] : c }}
+
+by
+
+
+
+E |-a A [X |-> mu X. A] == B : c
+------------- :: unfold
+E |-a mu X. A == B : unfold [ mu X. A ] . c
+
+
+E |-a A == B [X |-> mu X. B] : c
+------------- :: fold
+E |-a A == mu X. B : c . fold [ mu X. B ]
+
+
+A ~~> B : cx in E
+----------------- :: assump
+E |-a A1 == A2 : cx
+
+
+
+not (A ~~> B : cx' in E)
+E , cx: A1 -> B1 ~~> A2 -> B2 |-a A1 == A2 : c1
+E, cx: A1 -> B1 ~~> A2 -> B2 |-a B1 == B2 : c2
+---------------- :: arrfix
+E |-a A1 -> B1 == A2 -> B2: fixc cx. (c1 -> c2 )
+
+
+
+------------ :: idvar
+E |-a X == X : id
+
+
+----------- :: idint
+E |-a Int == Int : id
+
+
+---------- :: idtop
+E |-a Top == Top : id
+
+
+
+
+
+
+% defns
+% ACSubtypingC :: '' ::=
+
+% defn
+% AE |- A <:. B |> cs :: :: ACSubtyping :: 'ACSub_'
+% {{ com Amadio/Cardelli axiomatization of subtyping }}
+
+% by
+
+% ----- :: top
+% AE |- A <:. Top |> nil
+
+
+% ---- :: refl
+% AE |- A <:. A |> nil
+
+
+% AE |- A <:. B |> c1
+% AE |- B <:. C |> c2
+% ---- :: trans
+% AE |- A <:. C |> c1 , c2 , nil
+
+% ---- :: assump
+% (AE1 , (X, Y) , AE2) |- X <:. Y |> nil
+
+
+% [] |- A
+% ------- :: eq
+% AE |- A <:. B |> 
+
+
+% AE |- B1 <:. A1
+% AE |- A2 <:. B2
+% ----- :: arrow
+% AE |- A1 -> A2 <:. B1 -> B2
+
+% AE, (X, Y) |- A <:. B
+% ------ :: rec
+% AE |- mu X. A <:. mu Y. B
+
+
+
+
+
+
+
+defns
+eqec :: '' ::=
+
+defn
+E |- A == B : c ::  :: eqec :: 'ec_'
+{{ com Equi-Conversion rules that generate casts }}
+{{ tex [[E]] \vdash_{e} [[A]] = [[B]] : c }}
+
+by
+
+A ~~> B : cx in E
+------------------- :: assump
+E |- A == B : cx
+
+
+------------------- :: refl
+E |- A == A : id
+
+
+E |- A == B : c1
+E |- B == C : c2
+------------------- :: trans
+E |- A == C : c1 . c2
+
+
+------------------- :: unfold
+E |- mu X. A == A [X |-> mu X. A] : unfold [ mu X. A ]
+
+
+----------------- :: fold
+E |- A [X |-> mu X. A] == mu X. A : fold [ mu X. A]
+
+
+E |- A1 == A2 : c1
+E |- B1 == B2 : c2
+----------------- :: arr
+E |- A1 -> B1 == A2 -> B2: c1 -> c2
+
+
+E, cx: A1 -> B1 ~~> A2 -> B2 |- A1 == A2 : c1
+E, cx: A1 -> B1 ~~> A2 -> B2 |- B1 == B2 : c2
+---------------- :: arrfix
+E |- A1 -> B1 == A2 -> B2: fixc cx. (c1 -> c2 )
+
+
+
+
+% E |- A1 == A2 : c1 [ fixc cx. (c1 -> c2 ) / cx]
+% E |- B1 == B2 : c2 [ fixc cx. (c1 -> c2 ) / cx]
+% ---------------- :: arrfix
+% E |- A1 -> B1 == A2 -> B2: fixc cx. (c1 -> c2 )
+
+
+% defns
+% EquiTypingC :: '' ::=
+
+% defn
+% D ; G |- e :  A |> e' ::  :: EquiTypingC :: 'ECTyping_'
+% {{ com Typing rules }}
+% by
+
+
+% |- D
+% D |- G
+% ----------------- :: int
+% D; G |- i : Int |> i
+
+% |- D
+% D |- G
+% x : A in G
+% ----::var
+% D; G |- x : A |> x
+
+
+% D; G, x : A1 |- e : A2 |> e'
+% ----::abs
+% D; G |- \ x : A1 . e : A1 -> A2 |> \ x : A1 . e'
+
+
+% D; G |- e1 : A1 -> A2 |> e1'
+% D; G |- e2 : A1 |> e2'
+% ----::app
+% D; G |- e1 e2 : A2 |> e1' e2'
+
+% D; G, x : A |- e : A |> e'
+% ----::fix
+% D; G |- fix x : A . e : A |> fix x : A . e'
+
+% D; G |- e : A |> e'
+% [] |- A == B : c
+% ----::eq
+% D; G |- e : B |> cast [c] e'
+
+
+% With mode:
+
+defns
+EquiTypingC :: '' ::=
+
+defn
+D ; G |- e : A |> e' ::  :: EquiTypingC :: 'ECTyping_'
+{{ com Typing rules }}
+by
+
+
+|- D
+D |- G
+----------------- :: int
+D; G |- i : Int |> i
+
+|- D
+D |- G
+x : A in G
+----::var
+D; G |- x : A |> x
+
+
+D; G, x : A1 |- e : A2 |> e'
+----::abs
+D; G |- \ x : A1 . e : A1 -> A2 |> \ x : A1 . e'
+
+
+D; G |- e1 : A1 -> A2 |> e1'
+D; G |- e2 : A1 |> e2'
+----::app
+D; G |- e1 e2 : A2 |> e1' e2'
+
+D; G, x : A |- e : A |> e'
+----::fix
+D; G |- fix x : A . e : A |> fix x : A . e'
+
+D; G |- e : A |> e'
+[] |- A == B : c
+----::eq
+D; G |- e : B |> cast [c] e'
+
+
+
+D; G |- e : A |> e'
+[] |- A <: B 
+----::sub
+D; G |- e : B |> e'

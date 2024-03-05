@@ -5,6 +5,8 @@ metavar typevar, X , Y ::= {{ repr-locally-nameless }}
 
 metavar termvar, x , y ::= {{ repr-locally-nameless }}
 
+metavar castvar, cx , cy ::= {{ repr-locally-nameless }}
+
 metavar label, l ::= {{ coq nat }} {{ tex \mathit{[[label]]} }}
 
 metavar int, i ::= {{ coq nat }} {{ tex \mathit{[[int]]} }}
@@ -24,6 +26,7 @@ typ, A {{ tex A }}, B {{ tex B }}, C {{ tex C }}, Char {{ tex \mathsf{Char} }}, 
                                   {{ com recursive type }}
                                   {{ tex \mu [[X]].[[A]] }}
   | A [ X |-> B ]   :: M:: tsubst  {{ coq (open_typ_wrt_typ [[X A]][[B]]) }}
+  | A [ B / X ]   :: M:: tsubstt  {{ coq (typsubst_typ [[B]] [[X]]  [[A]]) }}
   | ( A )          :: S:: paren   {{ coq [[A]] }}
 
 
@@ -65,21 +68,32 @@ mode, m {{ tex m }} :: 'm_' ::= {{ com modes }}
 
 
 castop, c {{ tex c }} :: 'c_' ::= {{ com cast operators }}
+  | cx           ::  :: var     {{ com cast variable }}
+  % | ~ cx           ::  :: revvar     {{ com reverse cast variable }}
   | id           ::   ::  id      {{ com id operator }} {{ tex \mathsf{id} }}
   | unfold [ A ] ::   ::  unfold  {{ com unfold operator }} {{ tex \downarrow_{[[A]]} }}
   | fold [ A ]   ::   ::  fold    {{ com castdn }} {{ tex \uparrow_{[[A]]} }}
   | c1 -> c2     ::   ::  arrow   {{ com arrow operator }} {{ tex [[c1]]\rightarrow[[c2]] }}
+  | c1 . c2      ::   ::  seq     {{ com composition of a sequence of ops }} {{ tex [[c1]] \cdot [[c2]] }}
+  | fixc cx . c   ::   ::  fixc    (+ bind cx in c +)
+    {{ com fixpoint }} {{ tex \mathsf{fix} ~ [[cx]] .\, [[c]] }}
   | ~ c         ::  M  ::  reverse     {{ com reverse operator }} {{ tex \neg [[c]] }} {{coq (rev_cast [[c]]) }}
+  | c1 [ cx |-> c2 ]  ::  M  ::  subst     {{ coq (open_castop_wrt_castop [[cx c1]] [[c2]]) }}
+  | ( c )          :: S:: paren   {{ coq [[c]] }}
 
 
 embed {{ coq
 
-Fixpoint rev_cast (c : [[castop]]) : [[castop]] :=
+Fixpoint rev_cast (c:castop) :=
   match c with
-  | [[ id ]] => [[ id ]]
-  | [[ unfold [A] ]] => [[ fold [A] ]]
-  | [[ fold [A] ]] => [[ unfold [A] ]]
-  | [[ c1 -> c2 ]] =>  c_arrow (rev_cast [[ c1 ]]) (rev_cast [[ c2 ]])
+  | c_id => c_id
+  | c_arrow c1 c2 => c_arrow (rev_cast c1) (rev_cast c2) 
+  | c_fixc c => c_fixc (rev_cast c)
+  | c_unfold t => c_fold t
+  | c_fold t => c_unfold t
+  | c_seq c1 c2 => c_seq (rev_cast c2) (rev_cast c1)
+  | c_var_f x => c_var_f x
+  | c_var_b x => c_var_b x
   end.
 
 }}
@@ -88,11 +102,13 @@ Fixpoint rev_cast (c : [[castop]]) : [[castop]] :=
 substitutions
   single exp x   :: subst
   single typ X   :: typsubst
+  single castop cx :: castsubst
 
 
 freevars
   exp x      :: termfv
   typ X      :: typefv
+  castop cx  :: castfv
 
 
 parsing
@@ -119,10 +135,26 @@ tctx, D {{ tex \Delta }} :: 'tctx_' ::= {{ com type context }} {{ coq list ( ato
   | D1 , X , D2     :: M:: constwo_mid  {{ coq ([[D2]] ++ (cons ([[X]],tt ) [[D1]])) }}
 
 
+actx, AE {{ tex \Alpha  }} :: 'actx_' ::= {{ com amber subtyping context }} {{ coq list (atom * atom) }}
+  | []              ::  :: empty        {{ coq nil }}
+                                        {{ tex \cdot }}
+  | AE , ( X ,  Y )           ::  :: cons         {{ coq (cons ([[X]],[[Y]] ) [[AE]]) }}
+  | AE1 , AE2         :: M:: constwo      {{ coq ([[AE2]] ++ [[AE1]]) }}
+  | ( AE1 , ( X , Y ) , AE2 )    :: M:: constwo_mid  {{ coq ([[AE2]] ++ (cons ([[X]],[[Y]] ) [[AE1]])) }}
+
+
+cctx, E {{ tex \mathbb{E} }} :: 'cctx_' ::= {{ com cast context }} {{ coq list ( atom * (typ * typ)) }}
+  | []               ::  :: empty        {{ coq nil }} {{ tex \cdot }}
+  | E , cx : A ~~> B ::  :: cons         {{ coq (cons ([[cx]], ([[A]], [[B]])) [[E]]) }}
+  % | rev E      :: M :: rev         {{ coq (reverse_E [[E]]) }}
+  | ( E )           :: S :: paren        {{ coq ([[E]]) }}
+
+
 terminals :: 'terminals_' ::=
   | ~>           ::  :: subst      {{ tex \mapsto }}
   | \\           ::  :: lambda2    {{ tex \lambda }}
   | ->           ::  :: arrow      {{ tex \rightarrow }}
+  | .            ::  :: seq        {{ tex \cdot }}
   | -->          ::  :: red        {{ tex \hookrightarrow }}
   | |-           ::  :: turnstile  {{ tex \vdash }}
   | |=           ::  :: dash2      {{ tex \models }}
@@ -162,6 +194,9 @@ formula :: 'formula_' ::=
   | uniq D                   ::   :: uniqD
     {{ coq uniq [[D]] }}
     {{ tex }}
+  | uniq E                   ::   :: uniqE
+    {{ coq uniq [[E]] }}
+    {{ tex uniq [[E]] }}
   | x : A in G               ::   :: inG
     {{ coq binds [[x]][[A]][[G]] }}
   | x notin fv e             ::   :: fresh
@@ -173,8 +208,11 @@ formula :: 'formula_' ::=
     {{ coq [[X]] `in` (dom [[D]]) }}
     {{ tex [[X]] \in [[D]] }}
   | X notin dom D               ::   :: notInDx
-    {{ coq ~ [[X]] `notin` (dom [[D]]) }}
+    {{ coq [[X]] `notin` (dom [[D]]) }}
     {{ tex [[X]] \notin [[D]] }}
+  | cx notin dom E               ::   :: notInEx
+    {{ coq [[cx]] `notin` (dom [[E]]) }}
+    {{ tex [[cx]] \notin [[E]] }}
   | l1 <> l2                 ::   :: label
     {{ coq [[l1]] <> [[l2]] }}
     {{ tex [[l1]] \neq [[l2]] }}
@@ -191,6 +229,23 @@ formula :: 'formula_' ::=
     {{ tex [[A]] <: [[B]] }}
   | e1 --> * e2               ::   :: msarrow
     {{ tex [[e1]]~[[-->]]^*~[[e2]] }}
+  | A ~~> B : cx in E               ::   :: InEx
+    {{ coq In ([[cx]], ([[A]], [[B]])) [[E]] }}
+    {{ tex [[A]] \hookrightarrow [[B]] : [[cx]] \in [[E]] }}
+  | A =. B              ::  :: Tyeq
+      {{ coq Tyeq [[A]] [[B]] }}
+      {{ tex [[A]] \sim [[B]] }}
+  | ( X , Y ) in AE     :: :: inAE
+      {{ coq In ([[X]], [[Y]]) [[AE]] }}
+      {{ tex [[X]] <: [[Y]] \in [[AE]] }}
+
+
+% embed {{ coq
+
+% Definition reverse_E (E: cctx) :=
+%   map (fun v => match v with (A, B) =>  (B, A) end) E.
+
+% }}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,34 +341,53 @@ ordinary (mu X. A)
 
 
 defns
-TypCast :: '' ::=
+TypCast :: '' ::=                          
 
 defn
-D |- A ~~> B : c ::  :: TypCast :: 'TCast_'
+D ; E |- A ~~> B : c ::  :: TypCast :: 'TCast_'
 {{ com Typing Reduction Rules }}
 by
 
 D |- A
+uniq E
 ----------------- :: id
-D |- A ~~> A : id
+D; E |- A ~~> A : id
 
 
-D |- A1 ~~> A2 : c1
-D |- B1 ~~> B2 : c2
+D; E |- A1 ~~> A2 : c1
+D; E |- B1 ~~> B2 : c2
 ----------------- :: arrow
-D |- A1 -> B1 ~~> A2 -> B2 : c1 -> c2
+D; E |- A1 -> B1 ~~> A2 -> B2 : c1 -> c2
 
 
 D |- mu X. A
+uniq E
 ----------------- :: unfold
-D |- mu X. A ~~> A [X |-> mu X. A] : unfold [ mu X. A ]
+D; E |- mu X. A ~~> A [X |-> mu X. A] : unfold [ mu X. A ]
 
 
 D |- mu X. A
+uniq E
 ----------------- :: fold
-D |- A [X |-> mu X. A] ~~> mu X. A : fold [ mu X. A]
+D; E |- A [X |-> mu X. A] ~~> mu X. A : fold [ mu X. A]
+
+D; E |- A ~~> B : c1
+D; E |- B ~~> C : c2
+----------------- :: seq
+D; E |- A ~~> C : c1 . c2
+
+D |- A
+D |- B
+uniq E
+A ~~> B : cx in E
+----------------- :: var
+D; E |- A ~~> B : cx
 
 
+D; E, cx: A1 -> B1 ~~> A2 -> B2 |- A1 ~~> A2 : c1
+D; E, cx: A1 -> B1 ~~> A2 -> B2 |- B1 ~~> B2 : c2
+----------------- :: fix
+D; E |- A1 -> B1 ~~> A2 -> B2 : fixc cx. ( c1 -> c2 )
 
 
 defns
@@ -336,10 +410,117 @@ D |- G, x : A
 
 
 defns
+AmberWellFormedEnv :: '' ::=
+
+defn
+|- AE ::   :: AmberWF :: 'AWF_'
+{{ com Amber Well Formed Environment }}
+
+by
+
+------ :: nil
+|- []
+
+
+|- AE
+------ :: cons
+|- AE, (X, Y)
+
+
+
+defns
+AmberWellFormedType :: '' ::=
+
+defn
+AE |- A :: :: AmberWFT :: 'AWFT_'
+{{ com Amber Well Formed Type }}
+by
+
+
+|- AE
+----- :: nat
+AE |- Int
+
+
+|- AE
+----- :: top
+AE |- Top
+
+
+|- AE
+(X, Y) in AE
+----- :: varl
+AE |- X
+
+
+|- AE
+(X, Y) in AE
+----- :: varr
+AE |- Y
+
+AE |- A1
+AE |- A2
+----- :: arrow
+AE |- A1 -> A2
+
+
+AE, (X, Y) |- A
+----- :: rec
+AE |- mu X. A
+
+
+
+
+defns
+AmberSubtyping :: '' ::=
+
+defn
+AE |- A <: B :: :: AmberSubtyping :: 'ASub_'
+{{ com Amber Subtyping }}
+by
+
+|- AE
+------------ :: nat
+AE |- Int <: Int
+
+|- AE
+AE |- A
+------------ :: top
+AE |- A <: Top
+
+
+
+AE |- B1 <: A1
+AE |- A2 <: B2
+------ :: arrow
+AE |- A1 -> A2 <: B1 -> B2
+
+
+|- AE
+(X, Y) in AE
+------- :: var
+AE |- X <: Y
+
+
+AE, (X, Y) |- A <: B
+------- :: rec
+AE |- mu X. A <: mu Y. B
+
+|- AE
+AE |- mu X. A
+------- :: self
+AE |- mu X. A <: mu X. A
+
+
+
+
+
+
+defns
 Typing :: '' ::=
 
 defn
-D ; G |- e : A ::  :: Typing :: 'Typing_'
+D ; E ; G |- e : A ::  :: Typing :: 'Typing_'
 {{ com Typing rules }}
 by
 
@@ -347,28 +528,28 @@ by
 |- D
 D |- G
 ----------------- :: int
-D; G |- i : Int
+D; E; G |- i : Int
 
 |- D
 D |- G
 x : A in G
 ----::var
-D; G |- x : A
+D; E; G |- x : A
 
 
-D; G, x : A1 |- e : A2
+D; E; G, x : A1 |- e : A2
 ----::abs
-D; G |- \ x : A1 . e : A1 -> A2
+D; E; G |- \ x : A1 . e : A1 -> A2
 
 
-D; G |- e1 : A1 -> A2
-D; G |- e2 : A1
+D; E; G |- e1 : A1 -> A2
+D; E; G |- e2 : A1
 ----::app
-D; G |- e1 e2 : A2
+D; E; G |- e1 e2 : A2
 
-D; G, x : A |- e : A
+D; E; G, x : A |- e : A
 ----::fix
-D; G |- fix x : A . e : A
+D; E; G |- fix x : A . e : A
 
 % D; G |- e : A
 % D |- A ~~> B 
@@ -389,11 +570,16 @@ D; G |- fix x : A . e : A
 % D; G |- castup [ A ] e : A
 
 
-D; G |- e : A
-D |- A ~~> B : c
+D; E; G |- e : A
+D; E |- A ~~> B : c
 ----::cast
-D; G |- cast [ c ] e : B
+D; E; G |- cast [ c ] e : B
 
+
+D ; E; G |- e : A
+[] |- A <: B
+---- :: sub
+D ; E ; G |- e : B
 
 
 
@@ -442,29 +628,6 @@ value (cast [ c1 -> c2 ] e)
 % by
 
 
-defns
-DualCast :: '' ::=
-defn
-c1 ~ c2 ::  :: DualCast :: DCast_
-{{ com DualCast }} {{ tex  [[c1]] \sim  [[c2]] }}
-
-by
-
----------------------- :: id
-id ~ id
-
-
-c1 ~ c1'
-c2 ~ c2'
----------------------- :: arrow
-c1 -> c2 ~ c1' -> c2'
-
-
-
----------------------- :: rec
-unfold [A] ~ fold [A]
-
-
 
 
 defns
@@ -475,13 +638,16 @@ e --> e' ::  :: Reduction :: 'Red_'
 {{ com Reduction rules }}
 by
 
-
+value e'
 ----------------- :: beta
 (\ x : A . e) e' --> e [ x |-> e' ]
+
 
 e1 --> e1'
 ----------------- :: appl
 e1 e2 --> e1' e2
+
+
 
 value v1
 e2 --> e2'
@@ -495,27 +661,16 @@ fix x : A . e --> e [ x |-> fix x : A . e ]
 
 
 
-
+value e1
+value e2
 ----------------- :: cast_arr
 (cast [ c1 -> c2 ] e1) e2 --> cast [c2] (e1 (cast [~ c1] e2))
 
 
-% Wrong version
-% cannot deal with castdn (castdn (castdn ... (\x. ...))), no corresponding syntax
-% ----------------- :: castdn_arr
-% (castdn [ A2 -> B2 ] (\x : A1 . e1)) e2 -->  castdn [B2]  (e1 [x |-> castup [A1] e2])
 
-
-% ----------------- :: castup_arr
-% (castup [ A2 -> B2 ] (\x : A1 . e1)) e2 -->  castup [B2]  (e1 [x |-> castdn [A1] e2])
-
-
-% Old version
-% ----------------- :: castdn_arr
-% castdn [ A2 -> B2 ] (\x : A1 . e) -->  \\x: A2 . ( castdn [B2] e [x |-> castup [A1] x])
-% ----------------- :: castup_arr
-% castup [ A2 -> B2 ] (\x : A1 . e) -->  \\x: A2 . ( castup [B2] e [x |-> castdn [A1] x])
-
+value e
+----------------- :: cast_seq
+cast [ c1 . c2 ] e --> cast [ c2 ] (cast [ c1 ] e)
 
 
 e --> e'
@@ -523,12 +678,18 @@ e --> e'
 cast [ c ] e --> cast [ c ] e'
 
 
-c1 ~ c2
 value v
 ----------------- :: castelim
-cast [ c1 ] (cast [ c2 ] v) --> v
+cast [ unfold [A] ] (cast [ fold [B] ] v) --> v
 
 
 value v
 ----------------- :: castid
 cast [ id ] v --> v
+
+
+% cast [fix x. c] e -> cast [c [x := fix x. c] ] e
+
+value e
+----------------- :: castfix
+cast [ fixc cx . c ] e --> cast [ c [ cx |-> fixc cx . c ] ] e

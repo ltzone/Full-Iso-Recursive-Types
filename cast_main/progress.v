@@ -2,47 +2,9 @@ Require Import Program.Equality.
 Require Import Metalib.Metatheory.
 Require Export LibTactics.
 
-Require Export rules_inf.
+Require Export subtyping.
 
 
-
-Ltac inv H := inversion H; subst; try solve [
-  match goal with
-  | [H : value _ |- _ ] => inversion H; auto
-  | [H : ordinary _ |- _] => inversion H; auto
-  end
-].
-
-
-Ltac specialize_x_and_L X L :=
-  repeat match goal with
-         | [H : forall _, _ \notin L -> _, Q : X \notin L |- _ ] => specialize (H _ Q); clear Q
-         | [H : forall _, _ \notin L -> _ |- _ ] => assert (X \notin L) by auto
-         end.
-
-
-Ltac specialize_x_and_L_keep X L :=
-  repeat match goal with
-         | [H : forall _, _ \notin L -> _, Q : X \notin L |- _ ] => pose proof (H _ Q);clear Q
-         | [H : forall _, _ \notin L -> _ |- _ ] => assert (X \notin L) by auto
-         end.
-
-Ltac destruct_hypos :=
-  repeat
-    match goal with
-    | [H : _ /\ _ |- _ ] => destruct H
-    | [H : exists _, _ |- _ ] => destruct H
-    end.
-
-Ltac gather_atoms ::=
-  let A := gather_atoms_with (fun x : atoms => x) in
-  let B := gather_atoms_with (fun x : atom => singleton x) in
-  let E := gather_atoms_with (fun x : typ => typefv_typ x) in
-  let C := gather_atoms_with (fun x : list (var * typ) => dom x) in
-  let D := gather_atoms_with (fun x : exp => termfv_exp x) in
-  let F := gather_atoms_with (fun x : tctx => dom x) in
-  let G := gather_atoms_with (fun x : ctx => dom x) in
-  constr:(A `union` B `union`  E \u C \u D \u F \u G).
 
 
 Lemma binds_tm_regular: forall x A D G, WFTmE D G -> binds x A G -> WFT D A.
@@ -80,7 +42,7 @@ Proof with auto.
     { apply WFT_lc_typ in H1... }
 Qed.
 
-Theorem TypCast_regular: forall D A B c, TypCast D A B c -> WFT D A /\ WFT D B /\ lc_castop c.
+Theorem TypCast_regular: forall D E A B c, TypCast D E A B c -> WFT D A /\ WFT D B /\ lc_castop c /\ uniq E.
 Proof with auto.
   intros.
   induction H...
@@ -97,11 +59,18 @@ Proof with auto.
     rewrite typsubst_typ_intro with (X1:=X)...
     rewrite_alist (nil ++ D).
     apply WFT_typsubst...
+  - destruct_hypos...
+  - pick_fresh cx.
+    destruct (H0 cx) as [H1' [H2' [H3' H4']]]... destruct (H2 cx) as [H1'' [H2'' [H3'' H4'']]]...
+    repeat split...
+    -- apply lc_c_fixc_exists with cx. unfold open_castop_wrt_castop in *. simpl. apply lc_c_arrow...
+    -- inversion H4''...  
 Qed.
 
 
 
-Theorem typing_regular: forall D G e t, Typing D G e t ->
+
+Theorem typing_regular: forall D E G e t, Typing D E G e t ->
   WFTyE D /\ WFTmE D G /\ WFT D t /\ lc_exp e.
 Proof with auto.
   intros.
@@ -118,13 +87,17 @@ Proof with auto.
   - destruct_hypos. repeat split...
     { apply TypCast_regular in H0. destruct_hypos... }
     { constructor... apply TypCast_regular in H0. destruct_hypos... }
+  - destruct_hypos. repeat split...
+    { forwards(?&?): AmberSub_WFT H0.
+      rewrite_alist (nil ++ D ++ nil).
+      apply WFT_weakening... }
 Qed.
 
 
 Ltac get_WFT :=
   repeat match goal with
-  | [H : Typing _ _ ?e _ |- _ ] => apply typing_regular in H; destruct_hypos
-  | [H : TypCast _ _ _ |- _ ] => apply TypCast_regular in H; destruct_hypos
+  | [H : Typing _ _ _ ?e _ |- _ ] => apply typing_regular in H; destruct_hypos
+  | [H : TypCast _ _ _ _ |- _ ] => apply TypCast_regular in H; destruct_hypos
   end.
 
 Ltac get_lc :=
@@ -139,7 +112,7 @@ Ltac get_lc :=
 
 Lemma canonical_form_abs : forall e U1 U2,
   value e ->
-  Typing nil nil e (t_arrow U1 U2) ->
+  Typing nil nil nil e (t_arrow U1 U2) ->
   (exists V, exists e1, e = e_abs V e1)
   \/ (exists c1 c2 e', e = e_cast (c_arrow c1 c2) e').
 Proof.
@@ -147,14 +120,15 @@ Proof.
   dependent induction Typ; try solve [inversion Val] ...
   - left. exists U1 e. reflexivity.
   - inv H. right. exists c1 c2 e. reflexivity.
+  - inv H. applys* IHTyp...
 Qed.
 
 
 
 Lemma canonical_form_mu : forall e A,
   value e ->
-  Typing nil nil e (t_mu A) ->
-  (exists e1, e = e_cast (c_fold (t_mu A)) e1).
+  Typing nil nil nil e (t_mu A) ->
+  (exists e1 A', e = e_cast (c_fold (t_mu A')) e1).
 Proof with auto.
   intros.
   dependent induction H0...
@@ -163,13 +137,16 @@ Proof with auto.
   - inv H.
   - inv H.
     +
-      inv H1. exists e...
+      inv H1. exists e A...
     +
       inv H1.
+  - inv H1.
+    + applys* IHTyping.
+    + applys* IHTyping.
 Qed.
 
 
-Theorem progress: forall e t, Typing nil nil e t -> ( value e) \/ exists e', Reduction e e'.
+Theorem progress: forall e t, Typing nil nil nil e t -> (value e) \/ exists e', Reduction e e'.
 Proof with eauto.
   intros.
   assert (Hwf1: lc_exp e). { apply typing_regular in H. destruct_hypos... }
@@ -181,7 +158,7 @@ Proof with eauto.
   - 
     (* abs *)
     left. constructor... { apply WFT_lc_typ in Hwf2. inversion Hwf2... }
-  - 
+  -
     (* app *)
     destruct IHTyping1...
     +
@@ -197,17 +174,21 @@ Proof with eauto.
       v1 = castup [A3 -> A4] e1', A3 -> A4 ~~> A1 -> A2
       v1 = castdn [A1 -> A2] v1'
       *)
-
-      destruct (canonical_form_abs _ _ _ H1 H) as [[A [e ?]]|(c1 & c2 & e' & ?)];subst.
-      { subst. right. exists (open_exp_wrt_exp e e2)... 
-        apply Red_beta...
-        { inversion Hwf1;subst. inversion H4;subst... }
-      }
-      { subst. right. 
-        exists (e_cast c2 (e_app e' (e_cast (rev_cast c1) e2)))...
-        get_lc... inv H7.
-        (* apply Red_cast_arr... *)
-      }
+      destruct IHTyping2...
+      *
+        destruct (canonical_form_abs _ _ _ H1 H) as [[A [e ?]]|(c1 & c2 & e' & ?)];subst.
+        { subst. right. exists (open_exp_wrt_exp e e2)... 
+          apply Red_beta...
+          { inversion Hwf1;subst. inversion H5;subst... }
+        }
+        { subst. right. 
+          exists (e_cast c2 (e_app e' (e_cast (rev_cast c1) e2)))...
+          get_lc... inv H8. inv H11.
+          apply Red_cast_arr...
+          { inv H1. }
+        }
+      *
+        destruct H2 as [e2' ?]. right. exists (e_app e1 e2')...
       
     +
       (* e1 e2 ~~~> e1' e2 *)
@@ -218,52 +199,38 @@ Proof with eauto.
     
   -
     (* cast *)
-    destruct IHTyping...
+    destruct IHTyping... 
     +
-      (* cast [c] (cast [fold (μ a. A2)] e0) *)
-      inversion H1;subst...
+      inv H0.
+      * 
+        (* id *)
+        right...
       *
-        (* cast [c] lit *)
-        inversion H;subst...
-        inv H0. 
-        { (* cast [id] lit *)
-          right. exists (e_lit i)... }
+        (* arrow *)
+        left. get_lc. inv Hwf1. inv H9.
       *
-        inv H.
-        inv H0.
-        { (* cast [id] (λ x: A0. e0) *)
-          right. exists (e_abs A0 e0)... }
-        { get_lc. inv Hwf1.
-          inv H12.
-          (* left... apply V_arrow... *)
-        }
+        (* unfold *)
+        forwards (e'&A'&?): canonical_form_mu H...
+        subst e. right.
+        exists e'.
+        get_lc. inv H6.
+        (* apply Red_castelim... *)
+      * 
+        (* seq *)
+        right. exists (e_cast c2 (e_cast c1 e)).
+        get_lc. inv Hwf1. inv H9.
+        (* apply Red_cast_seq... *)
       *
-        inv H. inv H10.
-        inv H0.
-        { (* cast [id] (cast [fold (μ a. A2)] e0) *)
-          right. exists (e_cast (c_fold (t_mu A2)) e0)... }
-        { (* cast [unfold (μ a. A2)] (cast [fold (μ a. A2)] e0) *)
-          right. exists e0. apply Red_castelim...
-        }
-        { (* cast [fold (μ a. A)] (cast [fold (μ a. A2)]) e0 *)
-          left. rewrite H4...
-        }
+        (* assump *)
+        inv H5.
       *
-        (* cast [c] (cast [c1 -> c2] e0) *)
-        inv H0.
-        { (* cast [id] (cast [c1 -> c2] e0) *)
-          get_lc. right. exists ((e_cast (c_arrow c1 c2) e0))...
-        }
-        { (* cast [c0 -> c3] (cast [c1 -> c2] e0) *)
-          get_lc. inv H1. inv Hwf1. inv H12. 
-        }
-        { (* cast [unfold (μ a. A0)] (cast [c1 -> c2]  e0)
-            impossible *)
-          inv H. inv H12.
-        }
+        (* fix *)
+        right.
+        exists (e_cast (open_castop_wrt_castop (c_arrow c1 c2) (c_fixc (c_arrow c1 c2)) ) e).
+        get_lc. inv Hwf1.
+        (* apply Red_castfix. *)
     +
       destruct H1 as [e' ?]...
       right. exists (e_cast c e')...
       inv Hwf1. apply Red_cast...
-
 Qed.

@@ -3,18 +3,8 @@ Require Import Metalib.Metatheory.
 Require Export LibTactics.
 Require Import Lia.
 
-Require Export progress.
+Require Export equiRec.
 
-Lemma WFTmE_strengthening: forall D E F x U,
-  WFTmE D (F ++ x ~ U ++ E ) ->
-  WFTmE D (F ++ E).
-Proof with auto.
-  intros.
-  induction F...
-  - inversion H...
-  - inversion H;subst.
-    constructor...
-Qed.
 
 Lemma WFTmE_uniq: forall D E,
   WFTmE D E ->
@@ -37,10 +27,10 @@ Proof with auto.
 Qed. *)
 
 
-Lemma Typing_weakening: forall G F E1 E2 e T,
+Lemma Typing_weakening: forall G C F E1 E2 e T,
   WFTmE G (E1 ++ F ++ E2) ->
-  Typing G (E1 ++ E2) e T ->
-  Typing G (E1 ++ F ++ E2) e T.
+  Typing G C (E1 ++ E2) e T ->
+  Typing G C (E1 ++ F ++ E2) e T.
 Proof with auto.
   intros. dependent induction H0...
   -
@@ -59,13 +49,26 @@ Proof with auto.
     apply H0... simpl. constructor...
   -
     apply Typing_cast with (A:=A)...
+  -
+    apply Typing_sub with (A:=A)...
 Qed.
 
 
-Lemma typing_through_subst_ee : forall G F U E x T e u,
-  Typing G (F ++ x ~ U ++ E) e T ->
-  Typing G E u U ->
-  Typing G (F ++  E) (subst_exp u x e) T.
+
+
+Lemma revE_dist: forall E1 E2,
+  reverse_E (E1 ++ E2) = (reverse_E E1) ++ (reverse_E E2).
+Proof.
+  apply map_app.
+Qed.
+
+
+
+
+Lemma typing_through_subst_ee : forall G C F U E x T e u,
+  Typing G C (F ++ x ~ U ++ E) e T ->
+  Typing G C E u U ->
+  Typing G C (F ++  E) (subst_exp u x e) T.
 Proof with eauto.
   intros.
   remember (F ++ x ~ U ++ E) as E'.
@@ -116,48 +119,39 @@ Proof with auto.
     { inversion H0. } { inversion H0. }
 Qed. *)
 
-Theorem typCast_rev: forall E A B c, 
-  TypCast E A B c ->
-  TypCast E B A (rev_cast c).
+
+
+Lemma In_revE: forall cx A B E,
+  In (cx, (A, B)) E -> In (cx, (B, A)) (reverse_E E).
+Proof with auto.
+  intros. induction E...
+  - destruct a as [cx' [A' B']]. simpl in *. destruct H.
+    -- left. inversion H; subst...
+    -- right...
+Qed.
+
+
+Theorem TypCast_rev: forall E C A B c, 
+  TypCast E C A B c ->
+  TypCast E (reverse_E C) B A (rev_cast c).
 Proof with auto.
   intros. induction H;simpl...
-Qed.
-
-Lemma DualCast_det: forall c1 c2 ,
-  DualCast c1 c2 ->
-  forall G A B A',
-  TypCast G A B c1 ->
-  TypCast G B A' c2 ->
-  A = A'.
-Proof with auto.
-  intros c1 c2 H. dependent induction H;intros.
-  - inv H0. inv H...
-  - inv H1. inv H2.
-    rewrite (IHDualCast1 _ _ _ _ H8 H10).
-    rewrite (IHDualCast2 _ _ _ _ H9 H12)...
-  - inv H0. inv H1...
-Qed.
-
-
-Lemma DualCast_det2: forall c1 c2 ,
-  DualCast c1 c2 ->
-  forall G A B A',
-  TypCast G A B c2 ->
-  TypCast G B A' c1 ->
-  A = A'.
-Proof with auto.
-  intros c1 c2 H. dependent induction H;intros.
-  - inv H0. inv H...
-  - inv H1. inv H2.
-    rewrite (IHDualCast1 _ _ _ _ H8 H10).
-    rewrite (IHDualCast2 _ _ _ _ H9 H12)...
-  - inv H0. inv H1...
+  -
+    apply TCast_seq with (B:=B)...
+  -
+    apply TCast_var... apply In_revE...
+  -
+    apply TCast_fix with (L:=L \u dom E \u castfv_castop c1 \u castfv_castop c2)...
+    + intros. specialize_x_and_L cx L...
+      rewrite <- rev_cast_open...
+    + intros. specialize_x_and_L cx L...
+      rewrite <- rev_cast_open...
 Qed.
 
 
 Theorem preservation: forall e T,
-  Typing nil nil e T -> forall e', 
-  Reduction e e' -> Typing nil nil e' T.
+  Typing nil nil nil e T -> forall e', 
+  Reduction e e' -> Typing nil nil nil e' T.
 Proof with auto.
   intros. dependent induction H; try solve [inversion H1]...
   - 
@@ -165,10 +159,15 @@ Proof with auto.
     dependent induction H1; subst...
     +
       (* beta *)
-      inversion H; subst...
-      pick_fresh X. specialize_x_and_L X L.
-      rewrite subst_exp_intro with (x1:=X)...
-      apply typing_through_subst_ee with (F:=nil) (U:=A1) (E:=nil)...
+      clear IHTyping1 IHTyping2.
+      inductions H; subst...
+      * pick_fresh X. specialize_x_and_L X L.
+        rewrite subst_exp_intro with (x1:=X)...
+        apply typing_through_subst_ee with (F:=nil) (U:=A1) (E:=nil)...
+      * inv H0.
+        apply Typing_sub with (A:=A4)...
+        apply IHTyping with (A1:=A3) (A0:=A)...
+        apply Typing_sub with (A:=A1)...
     +
       (* app-1 *)
       apply IHTyping1 in H1...
@@ -179,15 +178,23 @@ Proof with auto.
       apply Typing_app with (A1:=A1)...
     +
       (* push-cast *)
-      inv H. inv H11.
-      { apply Typing_cast with (A:=B1)...
+      clear IHTyping1 IHTyping2.
+      inductions H.
+      { inv H0.
+        apply Typing_cast with (A:=B1)...
         apply Typing_app with (A1:=A0)...
         apply Typing_cast with (A:=A1)...
-        apply typCast_rev... }
+        apply TypCast_rev in H12... }
+      {        
+        inv H0.
+        apply Typing_sub with (A:=A3)...
+        eapply IHTyping...
+        apply Typing_sub with (A:=A1)...
+      }
 
   -
     (* fix *)
-    assert (Typing nil nil (e_fixpoint A e) A). { apply Typing_fix with (L:=L)... } 
+    assert (Typing nil nil nil (e_fixpoint A e) A). { apply Typing_fix with (L:=L)... } 
     inversion H1; subst...
     pick_fresh X. specialize_x_and_L X L.
     rewrite subst_exp_intro with (x1:=X)...
@@ -196,16 +203,45 @@ Proof with auto.
     (* cast *)
     inv H1.
     +
+      (* cast [c1;c2] e ~> cast c1 (cast [c2] e) *)
+      inv H0.
+      apply Typing_cast with (A:=B0)...
+      apply Typing_cast with (A:=A)...
+    +
       (* cast [c] e ~> cast [c] e' *)
       apply Typing_cast with (A:=A)...
     +
       (* cast [c] (cast [c2] e') ~> e', c ~ c2 *)
-      inv H.
-      assert (A0 = B). 
-      { apply DualCast_det2
-        with (c1:=c) (c2:=c2) (G:= nil) (B:= A)... }
-      subst...
+      inv H0. clear IHTyping.
+      inductions H;intros.
+      *
+        inv H2...
+      *
+        inv H2.
+        {
+          apply Typing_sub with (open_typ_wrt_typ A0 (t_mu A0)). 
+          2:{ apply unfolding_lemma... }
+          apply IHTyping with (B1:=B0)...
+        }
+        { apply IHTyping with (B1:=B0)... }
     +
       (* cast [id] e' ~> e' *)
       inv H0...
+    + 
+      (* cast [fixc c] e' ~>  *)
+      inv H0. eapply Typing_cast. apply H.
+      {
+        pick_fresh cx'.
+        specialize_x_and_L cx' L.
+        rewrite_alist (nil ++ [(cx', (t_arrow A1 B1, t_arrow A2 B2))] ++ nil) in H10.
+        rewrite_alist (nil ++ [(cx', (t_arrow A1 B1, t_arrow A2 B2))] ++ nil) in H3.
+        assert (TypCast nil (nil ++ nil) (t_arrow A1 B1) (t_arrow A2 B2) (c_fixc (c_arrow c1 c2)))...
+        forwards: subst_castop H10 H2.
+        forwards: subst_castop H3 H2.
+        rewrite <- castsubst_castop_intro in H5, H7...
+        apply TCast_arrow;auto.
+      }
+  -
+    apply Typing_sub with (A:=A)...
+
 Qed.

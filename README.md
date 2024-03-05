@@ -8,8 +8,8 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
 - [ ] Typing equivalence to the equi-recursive type system
   - [x] If `G |-i E : A` then `G |- e |E| : A`
   - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
-    - [ ] special treatment of cast operator substitution for `eqe -> TypCast` **(@Qianyong) ~ 1 week**
-    - [ ] completeness of `Coinductive Tyeq -> eqe` **(@Litao) ~ 2 weeks**
+    - [x] special treatment of cast operator substitution for `eqe -> TypCast`
+    - [ ] completeness of `Coinductive Tyeq -> eqe` **Admitted**
 - [x] Behavioral equivalence to the equi-recursive type system
   - [x] If `E -->i E'` then `|E| -->e* |E'|`
   - [x] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
@@ -18,11 +18,9 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
   - [x] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
         (direct if behavioral equivalence is proved)
   - [x] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
-- [ ] Check if with Amber rules, the equivalence result can be extended to subtyping
-  - [ ] add subtyping (amber style) **~ 2 weeks**
 
 
-## TODO for the system with subtyping 
+## the system with subtyping 
 
 
 - [ ] The type safety for `cast_main_ext`
@@ -47,16 +45,20 @@ Extending iso-recursive type systems (with unfold/folds) to a more generalized f
 
 ## Project Structure
 
-Proved sound projects:
+Main projects for the paper:
 
-- `cast_main`: the main project, containing the STLC + full-iso type system described above 
+- `cast_main_ext`: the main project, containing the STLC + full-iso type system
+- `cast_main_sub`: STLC + full-iso type system + Amber style subtyping + relation to equi-recursive subtyping
+
+Other minor projects:
+
 - `cast_det`: does not define a cast language, the casting relation is a deterministic cast relation. This system is too weak to achieve the goal of this project.
 - `cast_rcd`: extend `cast_main` with merges and single field records (but without subtyping)
-- `cast_main_sub`: STLC + full-iso type system + iso-recursive subtyping, type safety proved
+- `cast_simple`: a simple version of `cast_main_ext` without fixpoints
+- `cast_simple_sub`: extend `cast_simple` with subtyping
 
 
-Ongoing projects:
-- `cast_main_ext`: `cast_main` + sequential casts + fixpoint casts
+
 
 
 

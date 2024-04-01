@@ -1,0 +1,185 @@
+% grammar
+% invoking -merge true with -coq_lngen true will fail the latter option
+% formula :: 'formula_' ::=
+
+embed {{ coq
+
+Notation unfold_mu t := 
+    (open_typ_wrt_typ t (t_mu t)).
+
+}}
+
+
+
+defns
+eqe :: '' ::=
+
+defn
+D ; H |- A =. B :: :: eqe2 :: 'e2_'
+{{ com Brandt and Henglein's equivalence relation }}
+by
+
+(A, B) in H
+D |- A
+D |- B
+--------------- :: assump
+D; H |- A =. B
+
+D |- A
+--------------- :: refl
+D; H |- A =. A
+
+D; H |- A =. B
+D; H |- B =. C
+--------------- :: trans
+D; H |- A =. C
+
+
+D; H |- A =. B
+--------------- :: symm
+D; H |- B =. A
+
+
+D |- mu X. A
+--------------- :: fld
+D; H |- mu X. A =. A [X |-> mu X. A]
+
+
+
+D; (A1 -> A2, B1 -> B2) , H |- A1 =. B1
+D; (A1 -> A2, B1 -> B2) , H |- A2 =. B2
+--------------- :: arrfix
+D; H |- A1 -> A2 =. B1 -> B2
+
+
+
+
+
+defns
+ACSubtyping :: '' ::=
+
+defn
+AE |- A <:. B :: :: ACSubtyping :: 'ACSub_'
+{{ com Amadio/Cardelli axiomatization of subtyping }}
+
+by
+
+----- :: top
+AE |- A <:. Top
+
+
+---- :: refl
+AE |- A <:. A
+
+
+AE |- A <:. B
+AE |- B <:. C
+---- :: trans
+AE |- A <:. C
+
+---- :: assump
+(AE1 , (X, Y) , AE2) |- X <:. Y
+
+
+[]; [] |- A =. B
+------- :: eq
+AE |- A <:. B
+
+
+AE |- B1 <:. A1
+AE |- A2 <:. B2
+----- :: arrow
+AE |- A1 -> A2 <:. B1 -> B2
+
+AE, (X, Y) |- A <:. B
+------ :: rec
+AE |- mu X. A <:. mu Y. B
+
+
+
+
+defns
+EquiTyping :: '' ::=
+
+defn
+G |-e- e : A ::  :: EquiTyping :: 'ETyping_'
+{{ com Typing rules }}
+{{ tex  [[ G ]]  \vdash_{e} [[ e ]] : [[ A ]] }}
+by
+
+
+|- G
+----------------- :: int
+G |-e- i : Int
+
+|- G
+x : A in G
+----::var
+G |-e- x : A
+
+
+G, x : A1 |-e- e : A2
+----::abs
+G |-e- \ x : A1 . e : A1 -> A2
+
+
+G |-e- e1 : A1 -> A2
+G |-e- e2 : A1
+----::app
+G |-e- e1 e2 : A2
+
+
+% G |-e- e : A
+% [] ; [] |- A =. B
+% ----::eq
+% G |-e- e : B
+
+
+G |-e- e : A
+[] |- A <:. B
+----::sub
+G |-e- e : B
+
+
+
+
+defns
+EquiTypingC :: '' ::=
+
+defn
+G |- e : A |> e' ::  :: EquiTypingC :: 'ECTyping_'
+{{ com Typing rules }}
+by
+
+|- G
+----------------- :: int
+G |- i : Int |> i
+
+|- G
+x : A in G
+----::var
+G |- x : A |> x
+
+
+G, x : A1 |- e : A2 |> e'
+----::abs
+G |- \ x : A1 . e : A1 -> A2 |> \ x : A1 . e'
+
+
+G |- e1 : A1 -> A2 |> e1'
+G |- e2 : A1 |> e2'
+----::app
+G |- e1 e2 : A2 |> e1' e2'
+
+
+% G |- e : A |> e'
+% []; [] |- A ~~> B : c
+% ----::eq
+% G |- e : B |> cast [c] e'
+
+G |- e : A |> e'
+[]; [] |- A ~~> C1 : c1
+[] |- C1 <:. C2
+[]; [] |- C2 ~~> B : c2
+----::sub
+G |- e : B |> cast [c2] (cast [c1] e')

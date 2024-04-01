@@ -7,8 +7,6 @@ Require Import Operators_Properties.
 
 Require Export equiAux.
 
-
-
 (* Type safety of Full Iso-Recursive Types *)
 
 Theorem progress: forall e t, Typing  nil e t -> 
@@ -54,7 +52,7 @@ Qed.
 (*************************************************************************************************************************)
 (* Typing Equivalence to the equi-recursive type system *)
 
-Theorem typing_i2e: forall G e t, Typing G e t -> EquiTyping G (erase e) t.
+Theorem typing_i2e_alt: forall G e t, Typing G e t -> EquiTyping G (erase e) t.
 Proof with auto.
   intros.
   dependent induction H; simpls...
@@ -69,8 +67,38 @@ Proof with auto.
 Qed.
 
 
+Theorem typing_i2e: forall G e t, Typing G e t -> 
+  EquiTypingC G (erase e) t e.
+Proof with auto.
+  intros.
+  dependent induction H; simpls...
+  - 
+    apply ECTyping_abs with (L:=L)...
+    intros. specialize_x_and_L x L. rewrite erase_open_ee in H0...
+  -
+    apply ECTyping_app with (A1:=A1)...
+  -
+    apply ECTyping_eq with (A:=A)...
+Qed.
 
-Theorem typing_e2i: forall G e t, EquiTyping G e t -> 
+
+
+Theorem erase_typing: forall G e t e', 
+  EquiTypingC G e t e' -> erase e' = e.
+Proof with auto.
+  intros.
+  induction H...
+  - simpl. f_equal.
+    pick_fresh x. specialize_x_and_L x L.
+    rewrite erase_open_ee in H0.
+    simpl in H0. apply open_exp_wrt_exp_inj in H0...
+    rewrite erase_fv. fsetdec.
+  - simpl. f_equal...
+Qed.
+
+
+
+Theorem typing_e2i_alt: forall G e t, EquiTyping G e t -> 
   exists e', Typing G e' t /\ erase e' = e.
 Proof with auto.
   intros.
@@ -102,6 +130,137 @@ Proof with auto.
   -
     destruct IHEquiTyping as [e' [Hty He]].
     forwards*: TypCast_completeness H0.
+Qed.
+
+
+Lemma EquiTypingC_sem: forall G e  t e',
+  EquiTypingC G e  t e' ->
+  Typing G e' t /\ EquiTyping G e t.
+Proof with auto.
+  introv Typ.
+  dependent induction Typ;intros...
+  - split...
+    + apply Typing_abs with (L:=L).
+      intros. apply H0...
+    + apply ETyping_abs with (L:=L).
+      intros. apply H0...
+  - split...
+    + destruct_hypos. apply Typing_app with (A1:=A1)...
+    + destruct_hypos. apply ETyping_app with (A1:=A1)...
+  - split...
+    + destruct_hypos. apply Typing_cast with (A:=A)...
+    + destruct_hypos. apply ETyping_eq with (A:=A)...
+      eapply TypCast_soundness;eauto.
+Qed.
+
+
+
+Lemma ECTyping_weakening: forall G1 G G2 e t e',
+  EquiTypingC (G1 ++ G2) e  t e' ->
+  WFTmE (G1 ++ G ++ G2) ->
+  EquiTypingC (G1 ++ G ++ G2) e t e'.
+Proof with auto.
+  introv Hty Hwf.
+  gen G .
+  inductions Hty;intros...
+  - apply ECTyping_abs with (L:=L \u dom (G1 ++ G ++ G2))...
+    intros. rewrite_alist ((x ~ A1 ++ G1) ++ G ++ G2).
+    apply H0...
+    rewrite_alist (x ~ A1 ++ G1 ++ G ++ G2).
+    constructor... 
+    { specialize_x_and_L x L. forwards (?&?): EquiTypingC_sem H.
+      get_WFT. inv H2... }
+  - apply ECTyping_app with (A1:=A1)...
+  - apply ECTyping_eq with (A:=A)...
+Qed.
+
+
+Lemma ECTyping_subst: forall G1 G2 e1 t e1' e2  A e2' x,
+  EquiTypingC (G1 ++ x ~ A ++ G2) e1 t e1' ->
+  EquiTypingC G2 e2 A e2' ->
+  (* EquiTypingC D G2 e2 m2 A e2' -> *)
+  EquiTypingC (G1 ++ G2) (subst_exp e2 x e1) t (subst_exp e2' x e1').
+Proof with eauto using WFTmE_strengthening.
+  introv Hty1 Hty2.
+  gen e2 e2'.
+  inductions Hty1;intros;simpl...
+  - destruct (x0 == x)...
+    + subst. rewrite_alist (nil ++ G1 ++ G2). 
+      apply ECTyping_weakening;rewrite app_nil_l...
+      analyze_binds_uniq H0... { applys~ WFTmE_uniq... }
+      (* inv Hty2... *)
+  - apply ECTyping_abs with (L:=L \u dom (G1 ++ G2) \u {{x}})...
+    intros. rewrite_alist ((x0 ~ A1 ++ G1) ++ G2).
+    rewrite !subst_exp_open_exp_wrt_exp_var...
+    apply H0 with (A0:=A)...
+Qed.
+
+
+
+Lemma EquiTypingC_complete: forall G e t,
+  EquiTyping G e t ->
+  exists e', EquiTypingC G e  t e'.
+Proof with auto.
+  introv Typ.
+  dependent induction Typ;intros...
+  - exists (e_lit i)...
+  - exists (e_var_f x)...
+  - 
+    pick_fresh x. specialize_x_and_L x L.
+    destruct H0 as [e' Hty'].
+    exists (e_abs A1 (close_exp_wrt_exp x e')).
+    apply ECTyping_abs with (L:=L \u {{x}}
+      \u termfv_exp e \u termfv_exp e' \u dom G)...
+    intros.
+    rewrite subst_exp_intro with (x1:=x) (e1:=e)...
+    rewrite <- subst_exp_spec.
+    rewrite_alist (nil ++ x0 ~ A1 ++ G).
+    apply ECTyping_subst with (A:=A1)...
+    + rewrite_alist (x ~ A1 ++ x0 ~ A1 ++ G).
+      apply ECTyping_weakening...
+      get_WFT. inv H1.
+      constructor...
+      constructor...
+    + constructor... get_WFT. inv H1.
+      constructor...
+  - 
+    destruct IHTyp1 as [e1' Hty1].
+    destruct IHTyp2 as [e2' Hty2].
+    exists (e_app e1' e2').
+    apply ECTyping_app with (A1:=A1)...
+  -
+    apply TypCast_completeness in H.
+    destruct H as [c' ?].
+    destruct IHTyp as [e' ?].
+    exists (e_cast c' e').
+    apply ECTyping_eq with (A:=A)...
+Qed.
+
+Theorem equi_alt_equiv: forall G e t,
+  EquiTyping G e t <-> exists e', EquiTypingC G e t e'.
+Proof with auto.
+  intros. split.
+  - apply EquiTypingC_complete.
+  - intros [e' Hty]. apply EquiTypingC_sem in Hty...
+    destruct Hty...
+Qed.
+
+
+
+
+
+Lemma ETyping_regular: forall G e t,
+  EquiTyping G e t -> WFTmE G /\ WFT nil t /\ lc_exp e.
+Proof with auto.
+  introv Htyp.
+  inductions Htyp...
+  - repeat split... applys~ binds_tm_regular x G...
+  - pick_fresh x. forwards (?&?&?): H0 x...
+    inv H1. repeat split...
+    apply lc_e_abs_exists with (x1:=x)...
+  - destruct_hypos. inv H3...
+  - destruct_hypos. repeat split...
+    forwards (?&?): eqe2_regular H...
 Qed.
 
 
@@ -181,61 +340,6 @@ Qed.
 
 
 
-Lemma EquiTypingC_sem: forall G e  t e',
-  EquiTypingC G e  t e' ->
-  Typing G e' t /\ EquiTyping G e t.
-Proof with auto.
-  introv Typ.
-  dependent induction Typ;intros...
-  - split...
-    + apply Typing_abs with (L:=L).
-      intros. apply H0...
-    + apply ETyping_abs with (L:=L).
-      intros. apply H0...
-  - split...
-    + destruct_hypos. apply Typing_app with (A1:=A1)...
-    + destruct_hypos. apply ETyping_app with (A1:=A1)...
-  - split...
-    + destruct_hypos. apply Typing_cast with (A:=A)...
-    + destruct_hypos. apply ETyping_eq with (A:=A)...
-      eapply TypCast_soundness;eauto.
-Qed.
-
-
-
-
-Lemma ECTyping_weakening: forall G1 G G2 e t e',
-  EquiTypingC (G1 ++ G2) e  t e' ->
-  WFTmE (G1 ++ G ++ G2) ->
-  EquiTypingC (G1 ++ G ++ G2) e t e'.
-Proof with auto.
-  introv Hty Hwf.
-  gen G .
-  inductions Hty;intros...
-  - apply ECTyping_abs with (L:=L \u dom (G1 ++ G ++ G2))...
-    intros. rewrite_alist ((x ~ A1 ++ G1) ++ G ++ G2).
-    apply H0...
-    rewrite_alist (x ~ A1 ++ G1 ++ G ++ G2).
-    constructor... 
-    { specialize_x_and_L x L. forwards (?&?): EquiTypingC_sem H.
-      get_WFT. inv H2... }
-  - apply ECTyping_app with (A1:=A1)...
-  - apply ECTyping_eq with (A:=A)...
-Qed.
-
-Lemma ETyping_regular: forall G e t,
-  EquiTyping G e t -> WFTmE G /\ WFT nil t /\ lc_exp e.
-Proof with auto.
-  introv Htyp.
-  inductions Htyp...
-  - repeat split... applys~ binds_tm_regular x G...
-  - pick_fresh x. forwards (?&?&?): H0 x...
-    inv H1. repeat split...
-    apply lc_e_abs_exists with (x1:=x)...
-  - destruct_hypos. inv H3...
-  - destruct_hypos. repeat split...
-    forwards (?&?): eqe2_regular H...
-Qed.
 
 
 Lemma Red_ctx_cast: forall c e e', lc_castop c ->
@@ -371,28 +475,6 @@ Proof with auto.
         constructor...
 Qed.
 
-
-
-
-Lemma ECTyping_subst: forall G1 G2 e1 t e1' e2  A e2' x,
-  EquiTypingC (G1 ++ x ~ A ++ G2) e1 t e1' ->
-  EquiTypingC G2 e2 A e2' ->
-  (* EquiTypingC D G2 e2 m2 A e2' -> *)
-  EquiTypingC (G1 ++ G2) (subst_exp e2 x e1) t (subst_exp e2' x e1').
-Proof with eauto using WFTmE_strengthening.
-  introv Hty1 Hty2.
-  gen e2 e2'.
-  inductions Hty1;intros;simpl...
-  - destruct (x0 == x)...
-    + subst. rewrite_alist (nil ++ G1 ++ G2). 
-      apply ECTyping_weakening;rewrite app_nil_l...
-      analyze_binds_uniq H0... { applys~ WFTmE_uniq... }
-      (* inv Hty2... *)
-  - apply ECTyping_abs with (L:=L \u dom (G1 ++ G2) \u {{x}})...
-    intros. rewrite_alist ((x0 ~ A1 ++ G1) ++ G2).
-    rewrite !subst_exp_open_exp_wrt_exp_var...
-    apply H0 with (A0:=A)...
-Qed.
 
 
 
@@ -537,19 +619,6 @@ Qed.
 (* Semantic Equivalence to the equi-recursive type system *)
 
 
-Theorem erase_typing: forall G e t e', 
-  EquiTypingC G e t e' -> erase e' = e.
-Proof with auto.
-  intros.
-  induction H...
-  - simpl. f_equal.
-    pick_fresh x. specialize_x_and_L x L.
-    rewrite erase_open_ee in H0.
-    simpl in H0. apply open_exp_wrt_exp_inj in H0...
-    rewrite erase_fv. fsetdec.
-  - simpl. f_equal...
-Qed.
-
 Theorem erase_reduction: forall e t e' v,
   EquiTypingC nil e t e' ->
   e ==>* v -> value v ->
@@ -575,6 +644,19 @@ Qed.
 Definition diverge (e:exp) : Prop :=
   ~ (exists v, value v /\ e ==>* v).
 
+Theorem reductions_i2e: forall e v,
+  (* value v -> *)
+  e ==>* v ->
+  erase e ==>* erase v.
+Proof with auto.
+  introv Hred. 
+  induction Hred.
+  - apply reduction_i2e in H...
+  - apply rt_refl.
+  - apply rt_trans with (y:=erase y)...
+Qed.
+
+
 Theorem erase_diverge: forall e t e',
   EquiTypingC nil e t e' ->
   diverge e -> diverge e'.
@@ -584,9 +666,36 @@ Proof with auto.
   apply H0. destruct Hc as [v [Hval Hred]].
   exists (erase v). split...
   apply erase_typing in H. subst.
-  clear - Hred.
-  induction Hred.
-  - apply reduction_i2e in H...
-  - apply rt_refl.
-  - apply rt_trans with (y:=erase y)...
+  apply reductions_i2e in Hred...
+Qed.
+
+Theorem behavior_equiv_ter: forall e t e',
+  EquiTypingC nil e t e' ->
+  (terminate e <-> terminate e').
+Proof with auto.
+  intros.
+  split;intros.
+  + destruct H0 as [v [? ?]].
+    forwards (v' & ? &?) : erase_reduction H H1...
+    forwards (v'' & ? & ? & ?): ECTyping_value H3 H0...      
+    exists v''. split...
+    { apply rt_trans with (y:=v')... }
+  + destruct H0 as [v [? ?]].
+    forwards: erase_typing H.
+    forwards: reductions_i2e H1...
+    forwards: erase_value H0...
+    exists (erase v). subst. split...
+Qed.
+
+Theorem behavior_equiv: forall e t e',
+  EquiTypingC nil e t e' ->
+  (terminate e <-> terminate e') /\
+  (diverge e <-> diverge e').
+Proof with auto.
+  intros.
+  split.
+  - apply behavior_equiv_ter in H...
+  - 
+    forwards: behavior_equiv_ter H.
+    split;intros Hd;intros Hc;apply Hd;apply H0...
 Qed.

@@ -647,7 +647,7 @@ cast [ c ] e --> cast [ c ] e'
 
 value v
 ----------------- :: castelim
-cast [ unfold [A] ] (cast [ fold [A] ] v) --> v
+cast [ unfold [A] ] (cast [ fold [B] ] v) --> v
 
 
 value v

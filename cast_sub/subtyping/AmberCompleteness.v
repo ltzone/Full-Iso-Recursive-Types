@@ -2300,25 +2300,11 @@ Qed.
 
 
 
-Corollary amber_unfolding: forall D A B ,
-    sub_amber D (typ_mu A) (typ_mu B) ->
-    sub_amber D (open_tt A (typ_mu A)) (open_tt B (typ_mu B)).
-Proof with auto.
-  intros.
-  apply amber_soundness in H.
-  replace (rename_env D (typ_mu A)) with (typ_mu (rename_env D A)) in H by admit.
-  replace (rename_env D (typ_mu B)) with (typ_mu (rename_env D B)) in H by admit.
-  apply unfolding_lemma_version2 in H.
-
 Corollary amber_unfolding: forall A B ,
     sub_amber nil (typ_mu A) (typ_mu B) ->
     sub_amber nil (open_tt A (typ_mu A)) (open_tt B (typ_mu B)).
 Proof with auto.
   intros.
-  Check amber_soundness.
-  Check unfolding_lemma_version2.
-  Print env_trans.
-  Print rename_env.
   apply amber_soundness in H.
   apply unfolding_lemma_version2 in H.
   simpl in *.

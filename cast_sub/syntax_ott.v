@@ -654,10 +654,11 @@ Inductive Reduction : exp -> exp -> Prop :=    (* defn Reduction *)
      lc_castop c ->
      Reduction e e' ->
      Reduction (e_cast c e) (e_cast c e')
- | Red_castelim : forall (A:typ) (v:exp),
+ | Red_castelim : forall (A B:typ) (v:exp),
      lc_typ A ->
+     lc_typ B ->
      value v ->
-     Reduction (e_cast (c_unfold A)  ( (e_cast (c_fold A) v) ) ) v
+     Reduction (e_cast (c_unfold A)  ( (e_cast (c_fold B) v) ) ) v
  | Red_castid : forall (v:exp),
      value v ->
      Reduction (e_cast c_id v) v
@@ -694,17 +695,21 @@ Inductive eqe2 : tctx -> actx -> typ -> typ -> Prop :=    (* defn eqe2 *)
 (* defns ACSubtyping *)
 Inductive ACSubtyping : acctx -> typ -> typ -> Prop :=    (* defn ACSubtyping *)
  | ACSub_top : forall (AE:acctx) (A:typ),
-     lc_typ A ->
+     AmberWF AE ->
+     AmberWFT AE A ->
      ACSubtyping AE A t_top
  | ACSub_refl : forall (AE:acctx) (A:typ),
-     lc_typ A ->
+     AmberWF AE ->
+     AmberWFT AE A ->
      ACSubtyping AE A A
  | ACSub_trans : forall (AE:acctx) (A C B:typ),
      ACSubtyping AE A B ->
      ACSubtyping AE B C ->
      ACSubtyping AE A C
- | ACSub_assump : forall (AE1:acctx) (X Y:typevar) (AE2:acctx),
-     ACSubtyping  ( AE2  ++ (cons ( X , Y  )  AE1 ))  (t_var_f X) (t_var_f Y)
+ | ACSub_var : forall (AE:acctx) (X Y:typevar),
+     AmberWF AE ->
+      In ( X ,  Y )  AE  ->
+     ACSubtyping AE (t_var_f X) (t_var_f Y)
  | ACSub_eq : forall (AE:acctx) (A B:typ),
      eqe2  nil   nil  A B ->
      ACSubtyping AE A B
@@ -753,6 +758,10 @@ Inductive EquiTypingC : ctx -> exp -> typ -> exp -> Prop :=    (* defn EquiTypin
      EquiTypingC G e1 (t_arrow A1 A2) e1' ->
      EquiTypingC G e2 A1 e2' ->
      EquiTypingC G (e_app e1 e2) A2 (e_app e1' e2')
+ | ECTyping_eq : forall (G:ctx) (e:exp) (B:typ) (c:castop) (e':exp) (A:typ),
+     EquiTypingC G e A e' ->
+     TypCast  nil   nil  A B c ->
+     EquiTypingC G e B (e_cast c e')
  | ECTyping_sub : forall (G:ctx) (e:exp) (B:typ) (c2 c1:castop) (e':exp) (A C1 C2:typ),
      EquiTypingC G e A e' ->
      TypCast  nil   nil  A C1 c1 ->

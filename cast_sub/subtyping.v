@@ -4,10 +4,13 @@
 Require Import Metalib.Metatheory.
 Require Import Program.Equality.
 Require Import subtyping.AmberLocal.
+Require Import subtyping.AmberSoundness.
+Require Import subtyping.AmberCompleteness.
 (* Require Import subtyping.Decidability. *)
 Require Export rules_inf.
 Require Export LibTactics.
 Require Import Lia.
+
 
 
 (* Relating our types to TOPLAS types *)
@@ -147,6 +150,25 @@ Proof with auto.
     apply lc_t_mu_exists with (X1:=X)...
 Qed.
 
+#[export]
+Hint Extern 1 (lc_typ ?A) =>
+  match goal with
+  | H: AmberWFT _ A |- _ => apply AmberWFT_lc in H
+  end : core.
+
+
+Lemma AmberSubtyping_lc_typ: forall G A B,
+  AmberSubtyping G A B -> lc_typ A /\ lc_typ B.
+Proof with auto.
+  intros. inductions H...
+  - destruct_hypos...
+  - pick_fresh X. pick_fresh Y.
+    specialize_x_and_L Y L.
+    specialize_x_and_L X (L \u {{Y}}).
+    destruct_hypos.
+    split;eapply lc_t_mu_exists;eassumption.
+Qed.
+
 
 Lemma AmberWFT_Isowft: forall AE A,
   AmberWFT AE A -> wf_amber AE (trans_ty A).
@@ -185,6 +207,20 @@ Proof with auto.
 Qed.
 
 
+Lemma wf_open_tt_WFC: forall G A (X:atom),
+  X `notin` fv_tt A ->
+  wf_amber G (open_tt A X) ->
+  WFC A 1.
+Proof with auto.
+  intros.
+  apply wf_amber_to_WF in H0...
+  (* simpl in H. rewrite <- subst_tt_fresh in H.
+  2:{ apply notin_fv_domA... apply notin_fv_tt_open_aux... } *)
+  apply soundness_wfa in H0.
+  apply wfs_type in H0.
+  apply type_rename_env in H0.
+  apply type_open_tt_WFC in H...
+Qed.
 
 
 Lemma Isowft_AmberWFT: forall AE A,
@@ -198,13 +234,7 @@ Proof with auto.
     { 
       (* apply type_open_tt_WFC with (X:=X)... *)
       specialize (H X Y).
-      apply wf_amber_to_WF in H...
-      simpl in H. rewrite <- subst_tt_fresh in H.
-      2:{ apply notin_fv_domA... apply notin_fv_tt_open_aux... }
-      apply soundness_wfa in H.
-      apply wfs_type in H.
-      apply type_rename_env in H.
-      apply type_open_tt_WFC in H...
+      apply wf_open_tt_WFC in H...
     }
 Qed.
 
@@ -220,19 +250,194 @@ Hint Extern 1 (wf_amber ?AE (trans_ty ?A)) =>
   | H: AmberWFT AE A |- _ => apply AmberWFT_Isowft in H
   end : core.
 
-
+(* Lemma sam_reflexive: forall G A,
+  AmberBase.wfe_amber G ->
+  AmberBase.wf_amber G A ->
+  AmberBase.sub_amber G A A.
+Proof with auto.
+  intros.
+  inductions H0...
+  - apply sam_fvar.
+Admitted. *)
 
 Lemma AmberSubtyping_to_IsoSubtyping: forall G A B,
   AmberSubtyping G A B -> AmberBase.sub_amber G (trans_ty A) (trans_ty B).
 Proof with auto.
   intros.
   induction H; simpl; eauto.
-  - 
-Admitted.
+  - apply sam_rec with (L:=L \u typefv_typ A)...
+    intros. specialize_x_and_L Y L.
+    specialize_x_and_L X (L \u {{Y}}).
+    rewrite trans_ty_open_typ_wrt_typ in H0.
+    2:{ apply AmberSubtyping_lc_typ in H. destruct_hypos. 
+        apply degree_typ_wrt_typ_of_lc_typ  in H.
+        apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in H... }
+    rewrite trans_ty_open_typ_wrt_typ in H0.
+    2:{ apply AmberSubtyping_lc_typ in H. destruct_hypos. 
+        apply degree_typ_wrt_typ_of_lc_typ  in H3.
+        apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in H3... }
+    auto.
+  - apply sam_refl...
+    apply AmberWFT_Isowft in H0...
+Qed.
 
+Lemma IsoSubtyping_to_AmberSubtyping: forall G A B,
+  AmberBase.sub_amber G A B -> AmberSubtyping G (back_ty A) (back_ty B).
+Proof with auto.
+  intros.
+  induction H; simpl; eauto.
+  - apply ASub_rec with (L:=L \u fv_tt A \u fv_tt B)...
+    intros.
+    forwards H1': (H X Y)...
+    forwards H2': (H0 X Y)...
+    rewrite back_ty_open_tt in H2'.
+    2:{ apply sam_regular in H1'. destruct_hypos.
+        apply wf_open_tt_WFC in H4... }
+    rewrite back_ty_open_tt in H2'.
+    2:{ apply sam_regular in H1'. destruct_hypos.
+        apply wf_open_tt_WFC in H5... }
+    auto.
+  - apply ASub_self...
+    apply Isowft_AmberWFT in H0...
+Qed.
+
+Lemma open_tt_back_ty_distr: forall A B,
+  WFC A 1 ->
+  back_ty (open_tt A B) = open_typ_wrt_typ (back_ty A) (back_ty B).
+Proof with auto.
+  intros.
+  unfold open_typ_wrt_typ.
+  unfold open_tt.
+  revert H.
+  generalize 0. intros.
+  inductions H;intros...
+  - 
+    simpl. destruct (lt_eq_lt_dec b n) as [[?|?]|?].
+    + simpl. destruct (n == b);try lia...
+    + subst. simpl. destruct (n == n);try lia...
+    + simpl. destruct (n == b);try lia...
+  - simpl. rewrite IHWFC1... 
+    rewrite IHWFC2...
+  - simpl. f_equal.
+    rewrite IHWFC...
+Qed.
+
+Lemma degree_WFC: forall A n,
+   degree_typ_wrt_typ n A -> WFC (trans_ty A) n.
+Proof with auto.
+  inductions A;intros...
+  - inversion H;subst.
+    constructor...
+  - constructor...
+  - inversion H;subst. constructor...
+  - inversion H;subst. constructor...
+Qed.
+
+Lemma back_ty_mu: forall A,
+  back_ty (typ_mu A) = t_mu (back_ty A).
+Proof with auto.
+  reflexivity.
+Qed.
 
 Theorem unfolding_lemma: forall A B,
   AmberSubtyping nil (t_mu A) (t_mu B) ->
   AmberSubtyping nil (open_typ_wrt_typ A (t_mu A)) (open_typ_wrt_typ B (t_mu B)).
-Proof.
-Admitted.
+Proof with auto.
+  intros.
+  forwards (?&?): AmberSubtyping_lc_typ H.
+  apply AmberSubtyping_to_IsoSubtyping in H.
+  simpl in H.
+  apply amber_unfolding in H.
+  apply IsoSubtyping_to_AmberSubtyping in H.
+  rewrite open_tt_back_ty_distr in H.
+  2:{ apply degree_WFC. inversion H0;subst.
+      pick_fresh X. specialize (H3 X).
+      apply degree_typ_wrt_typ_of_lc_typ in H3.
+      apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in H3... }
+  rewrite open_tt_back_ty_distr in H.
+  2:{ apply degree_WFC. inversion H1;subst.
+      pick_fresh X. specialize (H3 X).
+      apply degree_typ_wrt_typ_of_lc_typ in H3.
+      apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in H3... }
+  rewrite !back_trans_ty in H.
+  rewrite !back_ty_mu in H.
+  rewrite !back_trans_ty in H...
+Qed.
+
+Theorem AmberSub_regular: forall G A B,
+  AmberSubtyping G A B -> AmberWF G /\ AmberWFT G A /\ AmberWFT G B.
+Proof with auto.
+  intros.
+  forwards (?&?): AmberSubtyping_lc_typ H.
+  apply AmberSubtyping_to_IsoSubtyping in H.
+  apply sam_regular in H.
+  destruct_hypos.
+  repeat split...
+  - apply Isowft_AmberWFT in H2...
+    rewrite back_trans_ty in H2...
+  - apply Isowft_AmberWFT in H3...
+    rewrite back_trans_ty in H3...
+Qed.
+
+
+Theorem AmberSub_trans: forall A B C,
+  AmberSubtyping nil A B -> AmberSubtyping nil B C -> AmberSubtyping nil A C.
+Proof with auto.
+  intros.
+  (* forwards (?&?): AmberSubtyping_lc_typ H. *)
+  apply AmberSubtyping_to_IsoSubtyping in H.
+  apply AmberSubtyping_to_IsoSubtyping in H0.
+  forwards: amber_transitivity H H0.
+  apply IsoSubtyping_to_AmberSubtyping in H1.
+  rewrite !back_trans_ty in H1...
+Qed.
+
+
+Fixpoint env_to_tctx (D: env) : tctx :=
+  match D with
+  | nil => nil
+  | (X, bind_sub) :: D' => (X, tt) :: env_to_tctx D'
+  | (X, bind_typ _) :: D' =>  (X, tt) :: env_to_tctx D'
+  end.
+
+Lemma env_to_tctx_dom: forall D,
+dom (env_to_tctx D) [=] dom D.
+Proof with auto.
+  intros.
+  induction D; simpl; eauto.
+  - reflexivity.
+  - destruct a. destruct b.
+    + simpl. fsetdec.
+    + simpl. fsetdec.
+Qed.
+
+
+
+
+Theorem WFS_WFT: forall D A,
+Rules.WFA D A -> WFT (env_to_tctx D) (back_ty A).
+Proof with auto.
+  intros.
+  induction H; simpl; eauto.
+  - apply WFT_var. rewrite env_to_tctx_dom.
+    apply binds_In in H...
+  - apply WFT_rec with (L:=L \u fv_tt A).
+    intros. specialize_x_and_L X L.
+    rewrite back_ty_open_tt in H0...
+    {
+      apply wfa_type in H.
+      apply type_open_tt_WFC in H...
+    }
+Qed.
+
+
+Theorem AmberWFT_WFT: forall  A,
+  AmberWFT nil A -> WFT nil A.
+Proof with auto.
+  intros.
+  apply AmberWFT_Isowft in H.
+  apply wf_amber_to_WF in H.
+  simpl in H.
+  apply WFS_WFT in H.
+  rewrite back_trans_ty in H...
+Qed.

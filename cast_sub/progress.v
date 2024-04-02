@@ -2,7 +2,7 @@ Require Import Program.Equality.
 Require Import Metalib.Metatheory.
 Require Export LibTactics.
 
-Require Export rules_inf.
+Require Export subtyping.
 
 
 
@@ -122,6 +122,9 @@ Proof with auto.
     { inv H1. apply WFT_lc_typ in H12... }
   - destruct_hypos. inv H4...
   - destruct_hypos. repeat split...
+    { apply TypCast_regular in H. destruct_hypos... }
+    { apply TypCast_regular in H. destruct_hypos... }
+  - destruct_hypos. repeat split...
     { apply TypCast_regular in H1.
       destruct_hypos... }
     { apply TypCast_regular in H.
@@ -129,7 +132,7 @@ Proof with auto.
       destruct_hypos... }
 Qed.
 
-
+(* 
 Lemma wf_amber_comm1: forall X Y A E1 E2,
   AmberWFT (E1 ++ [(X, Y)] ++ E2) A ->
   AmberWFT (E1 ++ [(X, Y)] ++ E2) (typsubst_typ (t_var_f Y) X A).
@@ -213,7 +216,7 @@ Proof with auto.
       rewrite typsubst_typ_intro with (X1:=Y)...
       rewrite_alist (nil ++ [(X, Y)] ++ AE).
       apply wf_amber_comm2...
-Qed.
+Qed. *)
 
 
 Theorem typing_regular: forall G e t, Typing G e t ->
@@ -231,9 +234,8 @@ Proof with auto.
     { apply TypCast_regular in H0. destruct_hypos... }
     { constructor... apply TypCast_regular in H0. destruct_hypos... }
   -  destruct_hypos. repeat split...
-    { apply sam_regular in H0. destruct_hypos.
-      
-    }
+    { apply AmberSub_regular in H0. destruct_hypos.
+      apply AmberWFT_WFT... }
 Qed.
 
 
@@ -265,6 +267,7 @@ Proof.
   dependent induction Typ; try solve [inversion Val] ...
   - left. exists U1 e. reflexivity.
   - inv H. right. exists c1 c2 e. reflexivity.
+  - inv H. applys* IHTyp...
 Qed.
 
 
@@ -272,7 +275,7 @@ Qed.
 Lemma canonical_form_mu : forall e A,
   value e ->
   Typing  nil e (t_mu A) ->
-  (exists e1, e = e_cast (c_fold (t_mu A)) e1).
+  (exists e1 A', e = e_cast (c_fold (t_mu A')) e1).
 Proof with auto.
   intros.
   dependent induction H0...
@@ -280,9 +283,12 @@ Proof with auto.
   - inv H.
   - inv H.
     +
-      inv H1. exists e...
+      inv H1. exists e A...
     +
       inv H1.
+  - inv H1.
+    + applys* IHTyping.
+    + applys* IHTyping.
 Qed.
 
 
@@ -342,96 +348,29 @@ Proof with eauto.
     destruct IHTyping... 
     +
       (* cast [c] (cast [fold (μ a. A2)] e0) *)
-      inversion H1;subst...
+      inversion H0;subst...
+      (* * 
+        (* id *)
+        right...
       *
-        (* cast [c] lit *)
-        inversion H;subst...
-        inv H0. 
-        { (* cast [id] lit *)
-          right. exists (e_lit i)... }
-        {
-          (* cast [c1; c2] lit *)
-          right. exists (e_cast c2 (e_cast c1 (e_lit i))).
-          inv Hwf1.
-          (* apply Red_cast_seq... *)
-        }
-        {
-          (* cast [x] lit *)
-          inversion H6.
-        }
-        (* {
-          right.
-          pick_fresh cx.
-          exists (e_cast (open_castop_wrt_castop c0 (c_fixc c0) ) (e_lit i)).
-          apply (Red_castfix)... apply TypCast_regular in H0; destruct_hypos...
-        } *)
+        (* arrow *)
+        left. get_lc. inv Hwf1. inv H9. *)
       *
-        inv H.
-        inv H0.
-        { (* cast [id] (λ x: A0. e0) *)
-          right. exists (e_abs A0 e0)... }
-        {
-          right. exists (e_cast c2 (e_cast c1 (e_abs A0 e0))).
-          (* apply Red_cast_seq... *)
-          inv Hwf1.
-        }
-        {
-          inversion H7.
-        }
-        {
-          right.
-          pick_fresh cx.
-          exists (e_cast (open_castop_wrt_castop (c_arrow c1 c2) (c_fixc (c_arrow c1 c2)) ) (e_abs A0 e0)).
-          apply (Red_castfix)...
-        }
+        (* unfold *)
+        forwards (e'&A'&?): canonical_form_mu H...
+        subst e. right.
+        exists e'.
+        get_lc. inv H5.
+        (* apply Red_castelim... *)
+      * 
+        (* seq *)
+        right. exists (e_cast c2 (e_cast c1 e)).
+        get_lc. inv Hwf1.
+        (* apply Red_cast_seq... *)
       *
-        inv H. inv H9.
-        inv H0.
-        { (* cast [id] (cast [fold (μ a. A2)] e0) *)
-          right. exists (e_cast (c_fold (t_mu A2)) e0)... }
-        { (* cast [unfold (μ a. A2)] (cast [fold (μ a. A2)] e0) *)
-          right. exists e0. apply Red_castelim...
-        }
-        { (* cast [fold (μ a. A)] (cast [fold (μ a. A2)]) e0 *)
-          left. rewrite H4...
-        }
-        {
-          (* cast [c1; c2] ...  *)
-          right. exists (e_cast c2 (e_cast c1 (e_cast
-            (c_fold (t_mu A2)) e0))).
-          apply Red_cast_seq; auto ;inversion Hwf1; inversion H11...
-        }
-        {
-          inversion H10. 
-        }
-      *
-        (* cast [c] (cast [c1 -> c2] e0) *)
-        inv H0.
-        { (* cast [id] (cast [c1 -> c2] e0) *)
-          get_lc. right. exists ((e_cast (c_arrow c1 c2) e0))...
-        }
-        (* cast [c0 -> c3] (cast [c1 -> c2] e0) *)
-          (* get_lc. inv H1. inv Hwf1. inv H11.  *)
-        
-        { (* cast [unfold (μ a. A0)] (cast [c1 -> c2]  e0)
-            impossible *)
-          inv H. inv H12.
-        }
-        {
-          (* cast [c1; c2] ... *)
-          right. exists (e_cast c3 (e_cast c0 (
-            e_cast (c_arrow c1 c2) e0))).
-          inv Hwf1.
-        }
-        {
-         inversion H8. 
-        }
-        {
-          right.
-          pick_fresh cx.
-          exists (e_cast (open_castop_wrt_castop (c_arrow c0 c3) (c_fixc (c_arrow c0 c3)) ) (e_cast (c_arrow c1 c2) e0)).
-          apply (Red_castfix)...
-        }
+        (* assump *)
+        inv H5.
+      
     +
       destruct H1 as [e' ?]...
       (* right. exists (e_cast c e')...

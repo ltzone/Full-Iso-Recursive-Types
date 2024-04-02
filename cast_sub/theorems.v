@@ -52,6 +52,21 @@ Qed.
 (*************************************************************************************************************************)
 (* Typing Equivalence to the equi-recursive type system *)
 
+Axiom subtyping_decomposition: forall A B D (Hwfa: WFT D A) (Hwfb: WFT D B),
+  ACSubtyping nil A B -> 
+  exists C1 C2, eqe2 D nil A C1 /\ 
+    AmberSubtyping nil C1 C2 /\ 
+    eqe2 D nil C2 B.
+
+Lemma AmberSubtyping_ACSubtyping: forall A B D,
+  AmberSubtyping D A B -> 
+  ACSubtyping D A B.
+Proof with auto.
+  intros.
+  induction H...
+  - apply ACSub_rec with (L:=L)...
+Qed.
+
 Theorem typing_i2e_alt: forall G e t, Typing G e t -> EquiTyping G (erase e) t.
 Proof with auto.
   intros.
@@ -62,8 +77,13 @@ Proof with auto.
   -
     apply ETyping_app with (A1:=A1)...
   -
-    apply ETyping_eq with (A:=A)...
-    apply TypCast_soundness in H0...
+    apply ETyping_sub with (A:=A)...
+    { apply ACSub_eq.
+      apply TypCast_soundness in H0...
+    }
+  -
+    apply ETyping_sub with (A:=A)...
+    { apply AmberSubtyping_ACSubtyping in H0... }
 Qed.
 
 
@@ -79,6 +99,40 @@ Proof with auto.
     apply ECTyping_app with (A1:=A1)...
   -
     apply ECTyping_eq with (A:=A)...
+  -
+    (* apply ECTyping_sub. *)
+Admitted.
+
+
+Theorem typing_i2e_elab: forall G e t, Typing G e t -> 
+  exists e', EquiTypingC G (erase e) t e'.
+Proof with eauto.
+  intros.
+  dependent induction H; simpls...
+  -
+    pick_fresh x. specialize_x_and_L x L.
+    destruct H0 as [e' ?].
+    exists (e_abs A1 (close_exp_wrt_exp x e')).
+    apply ECTyping_abs with (L:=L)...
+    intros. specialize_x_and_L x L. 
+    rewrite erase_open_ee in H0...
+    rewrite <- subst_exp_spec.
+    admit.
+  -
+    destruct IHTyping1 as [e1' ?].
+    destruct IHTyping2 as [e2' ?].
+    exists (e_app e1' e2').
+    apply ECTyping_app with (A1:=A1)...
+  -
+    destruct IHTyping as [e' ?].
+    exists (e_cast c (e_cast c_id e')).
+    eapply ECTyping_sub.
+    { apply ACSub_eq.
+      apply TypCast_soundness in H0...
+    }
+  -
+    apply ETyping_sub with (A:=A)...
+    { apply AmberSubtyping_ACSubtyping in H0... }
 Qed.
 
 

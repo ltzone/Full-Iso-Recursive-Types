@@ -64,10 +64,13 @@ AE |- A <:. B :: :: ACSubtyping :: 'ACSub_'
 
 by
 
+|- AE
+AE |-a- A
 ----- :: top
 AE |- A <:. Top
 
-
+|- AE
+AE |-a- A 
 ---- :: refl
 AE |- A <:. A
 
@@ -77,8 +80,11 @@ AE |- B <:. C
 ---- :: trans
 AE |- A <:. C
 
----- :: assump
-(AE1 , (X, Y) , AE2) |- X <:. Y
+
+|- AE
+(X, Y) in AE
+---- :: var
+AE |- X <:. Y
 
 
 []; [] |- A =. B
@@ -172,10 +178,10 @@ G |- e2 : A1 |> e2'
 G |- e1 e2 : A2 |> e1' e2'
 
 
-% G |- e : A |> e'
-% []; [] |- A ~~> B : c
-% ----::eq
-% G |- e : B |> cast [c] e'
+G |- e : A |> e'
+[]; [] |- A ~~> B : c
+----::eq
+G |- e : B |> cast [c] e'
 
 G |- e : A |> e'
 []; [] |- A ~~> C1 : c1

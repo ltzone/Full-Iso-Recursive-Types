@@ -25,6 +25,8 @@ Inductive castop : Set :=  (*r cast operators *)
  | c_seq : castop -> castop -> castop (*r composition of a sequence of ops *)
  | c_fixc : castop -> castop (*r fixpoint *).
 
+Definition acctx : Set := list (atom * atom).
+
 Inductive exp : Set :=  (*r expressions *)
  | e_var_b : nat -> exp (*r variable *)
  | e_var_f : termvar -> exp (*r variable *)
@@ -35,13 +37,11 @@ Inductive exp : Set :=  (*r expressions *)
 
 Definition ctx : Set := list ( atom * typ ).
 
-Definition acctx : Set := list (atom * atom).
-
 Definition tctx : Set := list ( atom * unit ).
 
-Definition actx : Set := list ((typ * typ)).
-
 Definition cctx : Set := list ( atom * (typ * typ)).
+
+Definition actx : Set := list ((typ * typ)).
 
 Inductive mode : Set :=  (*r modes *)
  | m_pos : mode (*r positive *)
@@ -158,18 +158,6 @@ Fixpoint close_typ_wrt_typ_rec (k:nat) (A5:var) (A_6:typ) {struct A_6}: typ :=
   | (t_mu A) => t_mu (close_typ_wrt_typ_rec (S k) A5 A)
 end.
 
-Fixpoint close_castop_wrt_typ_rec (k:nat) (A5:var) (c_5:castop) {struct c_5}: castop :=
-  match c_5 with
-  | (c_var_b nat) => c_var_b nat
-  | (c_var_f cx) => c_var_f cx
-  | c_id => c_id 
-  | (c_unfold A) => c_unfold (close_typ_wrt_typ_rec k A5 A)
-  | (c_fold A) => c_fold (close_typ_wrt_typ_rec k A5 A)
-  | (c_arrow c1 c2) => c_arrow (close_castop_wrt_typ_rec k A5 c1) (close_castop_wrt_typ_rec k A5 c2)
-  | (c_seq c1 c2) => c_seq (close_castop_wrt_typ_rec k A5 c1) (close_castop_wrt_typ_rec k A5 c2)
-  | (c_fixc c) => c_fixc (close_castop_wrt_typ_rec k A5 c)
-end.
-
 Fixpoint close_castop_wrt_castop_rec (k:nat) (c_5:var) (c__6:castop) {struct c__6}: castop :=
   match c__6 with
   | (c_var_b nat) => 
@@ -183,6 +171,28 @@ Fixpoint close_castop_wrt_castop_rec (k:nat) (c_5:var) (c__6:castop) {struct c__
   | (c_arrow c1 c2) => c_arrow (close_castop_wrt_castop_rec k c_5 c1) (close_castop_wrt_castop_rec k c_5 c2)
   | (c_seq c1 c2) => c_seq (close_castop_wrt_castop_rec k c_5 c1) (close_castop_wrt_castop_rec k c_5 c2)
   | (c_fixc c) => c_fixc (close_castop_wrt_castop_rec (S k) c_5 c)
+end.
+
+Fixpoint close_castop_wrt_typ_rec (k:nat) (A5:var) (c_5:castop) {struct c_5}: castop :=
+  match c_5 with
+  | (c_var_b nat) => c_var_b nat
+  | (c_var_f cx) => c_var_f cx
+  | c_id => c_id 
+  | (c_unfold A) => c_unfold (close_typ_wrt_typ_rec k A5 A)
+  | (c_fold A) => c_fold (close_typ_wrt_typ_rec k A5 A)
+  | (c_arrow c1 c2) => c_arrow (close_castop_wrt_typ_rec k A5 c1) (close_castop_wrt_typ_rec k A5 c2)
+  | (c_seq c1 c2) => c_seq (close_castop_wrt_typ_rec k A5 c1) (close_castop_wrt_typ_rec k A5 c2)
+  | (c_fixc c) => c_fixc (close_castop_wrt_typ_rec k A5 c)
+end.
+
+Fixpoint close_exp_wrt_castop_rec (k:nat) (c5:var) (e_5:exp) {struct e_5}: exp :=
+  match e_5 with
+  | (e_var_b nat) => e_var_b nat
+  | (e_var_f x) => e_var_f x
+  | (e_lit i) => e_lit i
+  | (e_abs A e) => e_abs A (close_exp_wrt_castop_rec k c5 e)
+  | (e_app e1 e2) => e_app (close_exp_wrt_castop_rec k c5 e1) (close_exp_wrt_castop_rec k c5 e2)
+  | (e_cast c e) => e_cast (close_castop_wrt_castop_rec k c5 c) (close_exp_wrt_castop_rec k c5 e)
 end.
 
 Fixpoint close_exp_wrt_typ_rec (k:nat) (A5:var) (e_5:exp) {struct e_5}: exp :=
@@ -208,27 +218,17 @@ Fixpoint close_exp_wrt_exp_rec (k:nat) (e_5:var) (e__6:exp) {struct e__6}: exp :
   | (e_cast c e) => e_cast c (close_exp_wrt_exp_rec k e_5 e)
 end.
 
-Fixpoint close_exp_wrt_castop_rec (k:nat) (c5:var) (e_5:exp) {struct e_5}: exp :=
-  match e_5 with
-  | (e_var_b nat) => e_var_b nat
-  | (e_var_f x) => e_var_f x
-  | (e_lit i) => e_lit i
-  | (e_abs A e) => e_abs A (close_exp_wrt_castop_rec k c5 e)
-  | (e_app e1 e2) => e_app (close_exp_wrt_castop_rec k c5 e1) (close_exp_wrt_castop_rec k c5 e2)
-  | (e_cast c e) => e_cast (close_castop_wrt_castop_rec k c5 c) (close_exp_wrt_castop_rec k c5 e)
-end.
-
-Definition close_castop_wrt_typ c_5 A5 := close_castop_wrt_typ_rec 0 c_5 A5.
-
-Definition close_exp_wrt_typ e_5 A5 := close_exp_wrt_typ_rec 0 e_5 A5.
+Definition close_exp_wrt_castop e_5 c5 := close_exp_wrt_castop_rec 0 e_5 c5.
 
 Definition close_typ_wrt_typ A_6 A5 := close_typ_wrt_typ_rec 0 A_6 A5.
 
-Definition close_exp_wrt_exp e__6 e_5 := close_exp_wrt_exp_rec 0 e__6 e_5.
-
-Definition close_exp_wrt_castop e_5 c5 := close_exp_wrt_castop_rec 0 e_5 c5.
+Definition close_castop_wrt_typ c_5 A5 := close_castop_wrt_typ_rec 0 c_5 A5.
 
 Definition close_castop_wrt_castop c__6 c_5 := close_castop_wrt_castop_rec 0 c__6 c_5.
+
+Definition close_exp_wrt_typ e_5 A5 := close_exp_wrt_typ_rec 0 e_5 A5.
+
+Definition close_exp_wrt_exp e__6 e_5 := close_exp_wrt_exp_rec 0 e__6 e_5.
 
 (** terms are locally-closed pre-terms *)
 (** definitions *)
@@ -434,6 +434,12 @@ Fixpoint rev_cast (c:castop) :=
   | c_var_b x => c_var_b x
   end.
 
+Fixpoint domA (E : list (atom * atom)) : atoms :=
+  match E with
+  | nil => {}
+  | (X,Y)::E' => singleton X \u singleton Y \u domA E'
+  end.
+
 
 
 Notation unfold_mu t := 
@@ -518,6 +524,9 @@ Inductive AmberWF : acctx -> Prop :=    (* defn AmberWF *)
      AmberWF  nil 
  | AWF_cons : forall (AE:acctx) (X Y:typevar),
      AmberWF AE ->
+      ~ AtomSetImpl.In  X  (domA  AE )  ->
+      ~ AtomSetImpl.In  Y  (domA  AE )  ->
+      X  <>  Y  ->
      AmberWF  (cons ( X , Y  )  AE ) .
 
 (* defns AmberWellFormedType *)
@@ -541,7 +550,10 @@ Inductive AmberWFT : acctx -> typ -> Prop :=    (* defn AmberWFT *)
      AmberWFT AE A2 ->
      AmberWFT AE (t_arrow A1 A2)
  | AWFT_rec : forall (L:vars) (AE:acctx) (A:typ) (Y:typevar),
-      ( forall X , X \notin  L  -> AmberWFT  (cons ( X , Y  )  AE )   ( open_typ_wrt_typ A (t_var_f X) )  )  ->
+      ( forall X , X \notin  L  ->  (* (forall L, X `notin` L ->  *)
+        
+          (forall Y, Y `notin` L \u singleton X ->
+            AmberWFT (cons ( X ,  Y )  AE  )   ( open_typ_wrt_typ A (t_var_f X) )  )  )  ->
      AmberWFT AE (t_mu A).
 
 (* defns AmberSubtyping *)

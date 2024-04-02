@@ -17,6 +17,7 @@ subtyping/FiniteUnfolding.v
 subtyping/Typesafety.v
 subtyping/DoubleUnfolding.v
 subtyping/AmberBase.v
+subtyping/AmberLocal.v
 subtyping/AmberSoundness.v
 subtyping/PositiveBase.v
 subtyping/PositiveSubtyping.v

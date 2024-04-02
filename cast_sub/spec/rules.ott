@@ -84,6 +84,12 @@ Fixpoint rev_cast (c:castop) :=
   | c_var_b x => c_var_b x
   end.
 
+Fixpoint domA (E : list (atom * atom)) : atoms :=
+  match E with
+  | nil => {}
+  | (X,Y)::E' => singleton X \u singleton Y \u domA E'
+  end.
+
 }}
 
 
@@ -213,6 +219,9 @@ formula :: 'formula_' ::=
   | A = B                    ::   :: type
     {{ coq [[A]] = [[B]] }}
     {{ tex [[A]] = [[B]] }}
+  | X <> Y                   ::   :: typevar
+    {{ coq [[X]] <> [[Y]] }}
+    {{ tex [[X]] \neq [[Y]] }}
   | e1 = e2                  ::   :: term
     {{ coq [[e1]] = [[e2]] }}
     {{ tex [[e1]] = [[e2]] }}
@@ -235,6 +244,16 @@ formula :: 'formula_' ::=
   | ( X , Y ) in AE     :: :: inAE
       {{ coq In ([[X]], [[Y]]) [[AE]] }}
       {{ tex [[X]] <: [[Y]] \in [[AE]] }}
+  | X notin domA AE            ::   :: notInAx
+    {{ coq ~ AtomSetImpl.In [[X]] (domA [[AE]]) }}
+    {{ tex [[X]] \notin [[AE]] }}
+  | AE , ( X , Y ) |-- A   :: :: wfae_sub
+      {{ coq 
+        (* (forall L, X `notin` L ->  *)
+        
+          (forall Y, Y `notin` L \u singleton X ->
+            AmberWFT (cons ([[X]], [[Y]]) [[AE]] ) [[A]]) }}
+      {{ tex [[AE]] \vdash [[X]] <: [[Y]] \dashv [[A]] }}
 
 
 % embed {{ coq
@@ -397,6 +416,9 @@ by
 
 
 |- AE
+X notin domA AE
+Y notin domA AE
+X <> Y
 ------ :: cons
 |- AE, (X, Y)
 
@@ -438,7 +460,7 @@ AE |-a- A2
 AE |-a- A1 -> A2
 
 
-AE, (X, Y) |-a- A
+AE, (X, Y) |-- A
 ----- :: rec
 AE |-a- mu X. A
 

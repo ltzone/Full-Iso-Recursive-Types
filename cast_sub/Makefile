@@ -108,7 +108,7 @@ syntax_ott.v: $(OTT_FILES)
 	fi >&2
 
 rules_inf.v: $(OTT_FILES)
-	$(LNGEN) --coq-admitted --coq rules_inf.v --coq-ott syntax_ott $(OTT_LOC)/rules.ott
+	$(LNGEN) --coq rules_inf.v --coq-ott syntax_ott $(OTT_LOC)/rules.ott
 
 pdf: $(DOC_LOC)/main.pdf
 

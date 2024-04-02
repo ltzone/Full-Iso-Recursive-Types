@@ -441,3 +441,56 @@ Proof with auto.
   apply WFS_WFT in H.
   rewrite back_trans_ty in H...
 Qed.
+
+
+Fixpoint tctx_to_env (D: tctx) : env :=
+  match D with
+  | nil => nil
+  | (X, tt) :: D' => (X, bind_sub) :: tctx_to_env D'
+  end.
+
+Lemma tctx_to_env_in: forall D X,
+  X `in` dom D ->
+  binds X bind_sub (tctx_to_env D).
+Proof with auto.
+  intros.
+  induction D; simpl in *; eauto.
+  - fsetdec.
+  - destruct a. destruct u.
+    apply add_iff in H. destruct H...
+Qed.
+
+
+Lemma WFT_lc_typ: forall D t, WFT D t -> lc_typ t.
+Proof with auto.
+  introv H. induction H...
+Qed.
+
+
+Lemma WFT_WFA: forall G A,
+  WFT G A ->
+  WFA (tctx_to_env G) (trans_ty A).
+Proof with auto.
+  intros. inductions H;simpl...
+  - apply WFA_fvar. apply tctx_to_env_in...
+  - simpl. apply WFA_rec with (L:=L \u typefv_typ A).
+    intros. specialize_x_and_L X L.
+    simpl in H0.  rewrite trans_ty_open_typ_wrt_typ in H0...
+    { apply WFT_lc_typ in H. apply degree_typ_wrt_typ_of_lc_typ  in H.
+      apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in H...
+    }
+Qed.
+
+
+Theorem WFT_AmberWFT: forall  A,
+  WFT nil A -> AmberWFT nil A.
+Proof with auto.
+  intros.
+  apply WFT_WFA in H.
+  apply wfa_to_wf in H.
+  eapply env_conv_wf_amber in H.
+  2:{ constructor. }
+  2:{ constructor. }
+  apply Isowft_AmberWFT in H.
+  rewrite back_trans_ty in H...
+Qed.

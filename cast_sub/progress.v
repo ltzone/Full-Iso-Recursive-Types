@@ -53,10 +53,6 @@ Proof with auto.
   - analyze_binds H0.
 Qed.
 
-Lemma WFT_lc_typ: forall D t, WFT D t -> lc_typ t.
-Proof with auto.
-  introv H. induction H...
-Qed.
 
 Lemma WFT_weakening: forall D1 D t, WFT (D1 ++ D) t -> forall D2, WFT (D1 ++ D2 ++ D) t.
 Proof with auto.
@@ -125,11 +121,14 @@ Proof with auto.
     { apply TypCast_regular in H. destruct_hypos... }
     { apply TypCast_regular in H. destruct_hypos... }
   - destruct_hypos. repeat split...
+    { apply AmberSub_regular in H. destruct_hypos.
+      apply AmberWFT_WFT... }
+  (* - destruct_hypos. repeat split...
     { apply TypCast_regular in H1.
       destruct_hypos... }
     { apply TypCast_regular in H.
       apply TypCast_regular in H1.
-      destruct_hypos... }
+      destruct_hypos... } *)
 Qed.
 
 (* 

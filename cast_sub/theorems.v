@@ -58,6 +58,20 @@ Axiom subtyping_decomposition: forall A B D (Hwfa: WFT D A) (Hwfb: WFT D B),
     AmberSubtyping nil C1 C2 /\ 
     eqe2 D nil C2 B.
 
+
+Lemma ECTyping_sub: forall (G:ctx) (e:exp) (B:typ) (c2 c1:castop) (e':exp) (A C1 C2:typ),
+  EquiTypingC G e A e' ->
+  TypCast  nil   nil  A C1 c1 ->
+  AmberSubtyping  nil  C1 C2 ->
+  TypCast  nil   nil  C2 B c2 ->
+  EquiTypingC G e B (e_cast c2  ( (e_cast c1 e') ) ).
+Proof.
+  intros.
+  apply ECTyping_eq with (A:=C2);try assumption.
+  apply ECTyping_isub with (A:=C1);try assumption.
+  apply ECTyping_eq with (A:=A);try assumption.
+Qed.
+
 Lemma AmberSubtyping_ACSubtyping: forall A B D,
   AmberSubtyping D A B -> 
   ACSubtyping D A B.
@@ -78,7 +92,7 @@ Proof with auto.
     apply ETyping_app with (A1:=A1)...
   -
     apply ETyping_sub with (A:=A)...
-    { apply ACSub_eq.
+    { apply ACSub_eq...
       apply TypCast_soundness in H0...
     }
   -
@@ -100,39 +114,7 @@ Proof with auto.
   -
     apply ECTyping_eq with (A:=A)...
   -
-    (* apply ECTyping_sub. *)
-Admitted.
-
-
-Theorem typing_i2e_elab: forall G e t, Typing G e t -> 
-  exists e', EquiTypingC G (erase e) t e'.
-Proof with eauto.
-  intros.
-  dependent induction H; simpls...
-  -
-    pick_fresh x. specialize_x_and_L x L.
-    destruct H0 as [e' ?].
-    exists (e_abs A1 (close_exp_wrt_exp x e')).
-    apply ECTyping_abs with (L:=L)...
-    intros. specialize_x_and_L x L. 
-    rewrite erase_open_ee in H0...
-    rewrite <- subst_exp_spec.
-    admit.
-  -
-    destruct IHTyping1 as [e1' ?].
-    destruct IHTyping2 as [e2' ?].
-    exists (e_app e1' e2').
-    apply ECTyping_app with (A1:=A1)...
-  -
-    destruct IHTyping as [e' ?].
-    exists (e_cast c (e_cast c_id e')).
-    eapply ECTyping_sub.
-    { apply ACSub_eq.
-      apply TypCast_soundness in H0...
-    }
-  -
-    apply ETyping_sub with (A:=A)...
-    { apply AmberSubtyping_ACSubtyping in H0... }
+    apply ECTyping_isub with (A:=A)...
 Qed.
 
 
@@ -150,6 +132,83 @@ Proof with auto.
   - simpl. f_equal...
 Qed.
 
+
+
+Lemma AmberWFT_weakening: forall G1 G2 G3 A,
+  AmberWF (G1 ++ G2 ++ G3) ->
+  AmberWFT (G1 ++ G3) A -> AmberWFT (G1 ++ G2 ++ G3) A.
+Proof with auto.
+  introv Hwfe Hwft.
+  inductions Hwft;intros...
+  - apply AWFT_varl with (Y:=Y)...
+    apply in_app_iff in H0. destruct H0.
+    + apply in_or_app...
+    +  apply in_or_app. right. apply in_or_app...
+  - apply AWFT_varr with (X:=X)...
+    apply in_app_iff in H0. destruct H0.
+    + apply in_or_app...
+    +  apply in_or_app. right. apply in_or_app...
+  - apply AWFT_rec with (L:=L \u domA (G1 ++ G2 ++ G3)). { apply Y. }
+    intros. rewrite_alist ((X ~ Y0 ++ G1) ++ G2 ++ G3).
+    apply H0 with (Y:=Y0)... simpl.
+    constructor...
+Qed.
+
+
+
+Lemma ACsub_regular: forall G A B,
+  ACSubtyping G A B -> AmberWF G /\ AmberWFT G A /\ AmberWFT G B.
+Proof with auto.
+  intros.
+  inductions H;destruct_hypos...
+  -
+    repeat split...
+    apply AWFT_varl with (Y:=Y)...
+    apply AWFT_varr with (X:=X)...
+  -
+    forwards (?&?): eqe2_regular H0.
+    apply WFT_AmberWFT in H1.
+    apply WFT_AmberWFT in H2.
+    repeat split...
+    + rewrite_alist (nil ++ AE ++ nil). apply AmberWFT_weakening...
+      simpl. rewrite app_nil_r...
+    + rewrite_alist (nil ++ AE ++ nil). apply AmberWFT_weakening...
+      simpl. rewrite app_nil_r...
+  -
+    pick_fresh Y'.
+    repeat split...
+    +
+      pick_fresh X. pick_fresh Y.
+      specialize_x_and_L Y L.
+      specialize_x_and_L X (L \u {{Y}}).
+      destruct_hypos. inv H0...
+    +
+      apply AWFT_rec with (L:=L \u domA AE). { apply Y'.  }
+      intros. apply H0...
+    +
+      apply AWFT_rec with (L:=L \u domA AE \u Rules.fv_tt (trans_ty A) \u Rules.fv_tt (trans_ty B)).
+       { apply Y'.  }
+      intros. specialize_x_and_L Y L.
+      specialize_x_and_L X (L \u {{Y}}). destruct_hypos.
+      assert (Hlc: lc_typ (open_typ_wrt_typ B (t_var_f Y)) )...
+      apply AmberWFT_Isowft in H4.
+      rewrite trans_ty_open_typ_wrt_typ in H4. 
+      2:{ apply degree_typ_wrt_typ_of_lc_typ  in Hlc.
+          apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in Hlc...
+      }
+      (* rewrite Infra.subst_tt_intro with (X:=Y) in H3... *)
+      replace ((X,Y) :: AE) with (nil ++ (X ~ Y) ++ AE)  in H4...
+      apply AmberBase.wf_amber_comm2 in H4.
+      rewrite <- Infra.subst_tt_intro in H4...
+      apply Isowft_AmberWFT in H4.
+      rewrite back_ty_open_tt in H4...
+      2:{
+          apply degree_WFC.
+          apply degree_typ_wrt_typ_of_lc_typ  in Hlc.
+          apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in Hlc...
+      }
+      rewrite back_trans_ty in H4...
+Qed.
 
 
 Theorem typing_e2i_alt: forall G e t, EquiTyping G e t -> 
@@ -184,6 +243,20 @@ Proof with auto.
   -
     destruct IHEquiTyping as [e' [Hty He]].
     forwards*: TypCast_completeness H0.
+  -
+    destruct IHEquiTyping as [e' [Hty He]].
+    forwards: subtyping_decomposition (@nil (atom * unit)) H0...
+    { forwards: ACsub_regular H0. destruct_hypos.
+      apply AmberWFT_WFT...
+    }
+    destruct H1 as [C1 [C2 [He1 [Hsub He2]]]].
+    apply TypCast_completeness in He1. destruct He1 as [c1 ?].
+    apply TypCast_completeness in He2. destruct He2 as [c2 ?].
+    exists (e_cast c2 (e_cast c1 e')).
+    split...
+    apply Typing_cast with (A:=C2)...
+    apply Typing_sub with (A:=C1)...
+    apply Typing_cast with (A:=A)...
 Qed.
 
 
@@ -205,6 +278,22 @@ Proof with auto.
     + destruct_hypos. apply Typing_cast with (A:=A)...
     + destruct_hypos. apply ETyping_eq with (A:=A)...
       eapply TypCast_soundness;eauto.
+  - split...
+    + destruct_hypos. apply Typing_sub with (A:=A)...
+    + destruct_hypos. apply ETyping_sub with (A:=A)...
+      apply AmberSubtyping_ACSubtyping...
+  (* - split...  
+    + destruct_hypos. apply Typing_cast with (A:=C2)...
+      apply Typing_sub with (A:=C1)...
+      apply Typing_cast with (A:=A)...
+    + destruct_hypos. apply ETyping_sub with (A:=A)...
+      apply TypCast_soundness in H.
+      apply TypCast_soundness in H1.
+      eapply ACSub_trans.
+      { apply ACSub_eq;try eassumption... }
+      eapply ACSub_trans.
+      { apply AmberSubtyping_ACSubtyping;eassumption. }
+      { apply ACSub_eq;try eassumption... } *)
 Qed.
 
 
@@ -226,6 +315,8 @@ Proof with auto.
       get_WFT. inv H2... }
   - apply ECTyping_app with (A1:=A1)...
   - apply ECTyping_eq with (A:=A)...
+  - apply ECTyping_isub with (A:=A)...
+  (* - apply ECTyping_sub with (A:=A) (C1:=C1) (C2:=C2)... *)
 Qed.
 
 
@@ -288,6 +379,17 @@ Proof with auto.
     destruct IHTyp as [e' ?].
     exists (e_cast c' e').
     apply ECTyping_eq with (A:=A)...
+  -
+    destruct IHTyp as [e' ?].
+    forwards*: subtyping_decomposition (@nil (atom * unit)) H...
+    { forwards: ACsub_regular H. destruct_hypos.
+      apply AmberWFT_WFT...
+    }
+    destruct H1 as [C1 [C2 [He1 [Hsub He2]]]].
+    apply TypCast_completeness in He1. destruct He1 as [c1 ?].
+    apply TypCast_completeness in He2. destruct He2 as [c2 ?].
+    exists (e_cast c2 (e_cast c1 e')).
+    apply ECTyping_sub with (A:=A) (C1:=C1) (C2:=C2)...
 Qed.
 
 Theorem equi_alt_equiv: forall G e t,
@@ -315,6 +417,9 @@ Proof with auto.
   - destruct_hypos. inv H3...
   - destruct_hypos. repeat split...
     forwards (?&?): eqe2_regular H...
+  - destruct_hypos. repeat split...
+    forwards (?&?&?): ACsub_regular H...
+    apply AmberWFT_WFT...
 Qed.
 
 
@@ -466,12 +571,19 @@ Proof with auto.
     + 
       forwards (v' & ? & ? & Hty1): IHHty Hval...
       forwards (?&?): EquiTypingC_sem Hty1.
-      forwards (v''&?): canonical_form_mu H3... subst v'.
+      forwards (v''& A' &?): canonical_form_mu H3... subst v'.
       inv H2. exists v''. repeat split...
-      * applys rt_trans (e_cast (c_unfold (t_mu A)) (e_cast (c_fold (t_mu A)) v'')).
+      * applys rt_trans (e_cast (c_unfold (t_mu A)) (e_cast (c_fold (t_mu A')) v'')).
         { applys Red_ctx_cast... }
         apply rt_step. constructor...
-      * inv Hty1. inv H13...
+      * clear IHHty H1 H3 H4 Hty. inductions Hty1.
+        { inv H1... } 
+        { inverts keep H1.
+          + eapply ECTyping_isub with (A:=unfold_mu A1).
+            2:{ apply unfolding_lemma... }
+            eapply IHHty1 with (A'0:=A')...
+          + eapply IHHty1 with (A'0:=A')...
+        }
     +
       forwards (v' & ? & ? & Hty1): IHHty Hval...
       exists (e_cast (c_fold (t_mu A)) v')...
@@ -527,6 +639,11 @@ Proof with auto.
         rewrite_alist (@nil (atom * (typ * typ)) ++ nil).
         applys subst_castop... 2:{ apply Heqec. }
         constructor...
+  -
+    forwards (v' & ? & ? & Hty1): IHHty Hval...
+    exists v'.
+    repeat split...
+    * apply ECTyping_isub with (A:=A)...
 Qed.
 
 
@@ -584,6 +701,11 @@ Proof with auto.
       applys Red_ctx_cast...
     +
       eapply ECTyping_eq;eassumption.
+  -
+    inv H.
+    forwards Hty2': ECTyping_isub Hty2 H4.
+    forwards (e0 & Hred' & Hty'): IHHty1 A e1 A3 A4 Hty2'...
+    exists e0. split*.
 Qed.
 
 Inductive equi_expr: exp -> Prop :=
@@ -626,6 +748,8 @@ Proof with auto.
       exists (e_cast c e2'). split.
       { applys Red_ctx_cast... }
       { eapply ECTyping_eq;eassumption. }
+    + 
+      forwards* (e2' & Hred' & Hty'): IHHty.
   -
     inductions Hty.
     + forwards* (e1'' & Hred' & Hty'): IHHred.
@@ -636,6 +760,9 @@ Proof with auto.
       exists (e_cast c e''). split.
       { applys Red_ctx_cast... }
       { eapply ECTyping_eq;eassumption. }
+    + 
+      forwards* (e2' & Hred' & Hty'): IHHty.
+      { intros. apply IHHred... }
   -
     inductions Hty.
     + 
@@ -647,6 +774,9 @@ Proof with auto.
     + forwards* (e'' & Hred' & Hty'): IHHty. { apply IHHred. }
       exists (e_cast c e''). split.
       { applys Red_ctx_cast... } { eapply ECTyping_eq;eassumption. }
+    + 
+      forwards* (e'' & Hred' & Hty'): IHHty.
+        { intros. apply IHHred... }
   -
     forwards Hequi: ECTyping_equi_expr_lc Hty.
     inverts Hequi as He1 He2.

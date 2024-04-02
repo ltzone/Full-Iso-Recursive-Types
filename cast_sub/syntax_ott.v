@@ -711,6 +711,7 @@ Inductive ACSubtyping : acctx -> typ -> typ -> Prop :=    (* defn ACSubtyping *)
       In ( X ,  Y )  AE  ->
      ACSubtyping AE (t_var_f X) (t_var_f Y)
  | ACSub_eq : forall (AE:acctx) (A B:typ),
+     AmberWF AE ->
      eqe2  nil   nil  A B ->
      ACSubtyping AE A B
  | ACSub_arrow : forall (AE:acctx) (A1 A2 B1 B2:typ),
@@ -737,6 +738,10 @@ Inductive EquiTyping : ctx -> exp -> typ -> Prop :=    (* defn EquiTyping *)
      EquiTyping G e1 (t_arrow A1 A2) ->
      EquiTyping G e2 A1 ->
      EquiTyping G (e_app e1 e2) A2
+ | ETyping_eq : forall (G:ctx) (e:exp) (B A:typ),
+     EquiTyping G e A ->
+     eqe2  nil   nil  A B ->
+     EquiTyping G e B
  | ETyping_sub : forall (G:ctx) (e:exp) (B A:typ),
      EquiTyping G e A ->
      ACSubtyping  nil  A B ->
@@ -762,12 +767,10 @@ Inductive EquiTypingC : ctx -> exp -> typ -> exp -> Prop :=    (* defn EquiTypin
      EquiTypingC G e A e' ->
      TypCast  nil   nil  A B c ->
      EquiTypingC G e B (e_cast c e')
- | ECTyping_sub : forall (G:ctx) (e:exp) (B:typ) (c2 c1:castop) (e':exp) (A C1 C2:typ),
+ | ECTyping_isub : forall (G:ctx) (e:exp) (B:typ) (e':exp) (A:typ),
      EquiTypingC G e A e' ->
-     TypCast  nil   nil  A C1 c1 ->
-     ACSubtyping  nil  C1 C2 ->
-     TypCast  nil   nil  C2 B c2 ->
-     EquiTypingC G e B (e_cast c2  ( (e_cast c1 e') ) ).
+     AmberSubtyping  nil  A B ->
+     EquiTypingC G e B e'.
 
 
 (** infrastructure *)

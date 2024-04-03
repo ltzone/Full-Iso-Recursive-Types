@@ -10,7 +10,7 @@ Definition int : Set := nat.
 Inductive typ : Set :=  (*r types *)
  | t_var_b : nat -> typ (*r type variable *)
  | t_var_f : typevar -> typ (*r type variable *)
- | t_int : typ (*r int *)
+ | t_int : typ (*r int type *)
  | t_arrow : typ -> typ -> typ (*r function type *)
  | t_mu : typ -> typ (*r recursive type *).
 
@@ -21,28 +21,24 @@ Inductive castop : Set :=  (*r cast operators *)
  | c_unfold : typ -> castop (*r unfold operator *)
  | c_fold : typ -> castop (*r castdn *)
  | c_arrow : castop -> castop -> castop (*r arrow operator *)
- | c_seq : castop -> castop -> castop (*r composition of a sequence of ops *)
+ | c_seq : castop -> castop -> castop (*r composition of casts *)
  | c_fixc : castop -> castop (*r fixpoint *).
-
-Definition ctx : Set := list ( atom * typ ).
-
-Inductive mode : Set :=  (*r modes *)
- | m_pos : mode (*r positive *)
- | m_neg : mode (*r negative *).
 
 Inductive exp : Set :=  (*r expressions *)
  | e_var_b : nat -> exp (*r variable *)
  | e_var_f : termvar -> exp (*r variable *)
- | e_lit : int -> exp (*r lit *)
- | e_abs : typ -> exp -> exp (*r abstraction with argument annotation *)
- | e_app : exp -> exp -> exp (*r applications *)
+ | e_lit : int -> exp (*r literal value *)
+ | e_abs : typ -> exp -> exp (*r function abstraction *)
+ | e_app : exp -> exp -> exp (*r function applications *)
  | e_cast : castop -> exp -> exp.
+
+Definition ctx : Set := list ( atom * typ ).
 
 Definition tctx : Set := list ( atom * unit ).
 
-Definition cctx : Set := list ( atom * (typ * typ)).
-
 Definition actx : Set := list ((typ * typ)).
+
+Definition cctx : Set := list ( atom * (typ * typ)).
 
 (* EXPERIMENTAL *)
 (** auxiliary functions on the new list types *)

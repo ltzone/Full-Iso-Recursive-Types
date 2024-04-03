@@ -59,7 +59,7 @@ EquiTyping :: '' ::=
 
 defn
 G |-e- e : A ::  :: EquiTyping :: 'ETyping_'
-{{ com Typing rules }}
+{{ com Equi-recursive Typing rules }}
 {{ tex  [[ G ]]  \vdash_{e} [[ e ]] : [[ A ]] }}
 by
 
@@ -96,7 +96,8 @@ EquiTypingC :: '' ::=
 
 defn
 G |- e : A |> e' ::  :: EquiTypingC :: 'ECTyping_'
-{{ com Typing rules }}
+{{ com Elaboration rules from equi-recursive types to full iso-recursive types }}
+{{ tex  [[ G ]]  \vdash_e [[ e ]] : [[ A ]] \grayboxm{ \rhd \, [[e']] } }}
 by
 
 |- G

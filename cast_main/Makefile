@@ -3,9 +3,9 @@
 #  Primary targets:
 #    all           - the default target; synonym for 'coq'
 #    coq           - builds all .vo files
-#    doc           - synonym for 'documentation'
-#    documentation - builds all html documentation
-#    clean         - removes generated files
+#    doc           - builds PDF specification for all the rules
+#    clean         - removes generated Coq files
+#    realclean     - removes generated Coq files and documentation
 #
 #  Other targets:
 #    rebuild       - regenerates files from Ott language specifications
@@ -65,7 +65,7 @@ VOFILES  = $(foreach i, $(FILES), $(i).vo)
 .PHONY: all clean coq dist doc documentation rebuild pdf rules
 .SUFFIXES: .v .vo
 
-all: coq
+all: syntax_ott.v rules_inf.v coq
 
 quick:  $(COQMKFILENAME) $(VFILES)
 	@$(MAKE) -f CoqSrc.mk quick
@@ -73,19 +73,12 @@ quick:  $(COQMKFILENAME) $(VFILES)
 coq: $(COQMKFILENAME) $(VFILES)
 	@$(MAKE) -f CoqSrc.mk
 
-doc:
-	+make documentation
-
-documentation: $(DOCDIR) $(VOFILES)
-	$(COQDOC) -g --quiet --noindex --html -d $(DOCDIR) $(VFILES)
-	cp -f ../custom.css $(DOCDIR)/coqdoc.css
-
 clean:
-	rm -f *.vo  *.vos *.vok *.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d
+	rm -f **/*.vo  **/*.vos **/*.vok **/*.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d
 	rm -rf $(DOCDIR) $(COQMKFILENAME) $(COQMKFILENAME).conf
 
 realclean: clean
-	rm -f $(OTT_SOURCE)_ott.v rules_inf.v $(DOC_LOC)/rules.tex $(DOC_LOC)/*.aux $(DOC_LOC)/*.fls  $(DOC_LOC)/*.log $(DOC_LOC)/*.fdb_latexmk $(DOC_LOC)/*.pdf
+	rm -f syntax_ott.v rules_inf.v $(DOC_LOC)/rules.tex $(DOC_LOC)/*.aux $(DOC_LOC)/*.fls  $(DOC_LOC)/*.log $(DOC_LOC)/*.fdb_latexmk $(DOC_LOC)/*.pdf
 
 rules: $(DOC_LOC)/rules.tex syntax_ott.v rules_inf.v
 
@@ -108,7 +101,7 @@ syntax_ott.v: $(OTT_FILES)
 	fi >&2
 
 rules_inf.v: $(OTT_FILES)
-	$(LNGEN) --coq-admitted --coq rules_inf.v --coq-ott syntax_ott $(OTT_LOC)/rules.ott
+	$(LNGEN) --coq rules_inf.v --coq-ott syntax_ott $(OTT_LOC)/rules.ott
 
 pdf: $(DOC_LOC)/main.pdf
 

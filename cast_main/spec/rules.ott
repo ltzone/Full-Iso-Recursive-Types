@@ -5,7 +5,7 @@ metavar typevar, X , Y ::= {{ repr-locally-nameless }}
 
 metavar termvar, x , y ::= {{ repr-locally-nameless }}
 
-metavar castvar, cx , cy ::= {{ repr-locally-nameless }}
+metavar castvar, cx {{ tex \iota }} , cy ::= {{ repr-locally-nameless }}
 
 metavar label, l ::= {{ coq nat }} {{ tex \mathit{[[label]]} }}
 
@@ -17,9 +17,9 @@ metavar int, i ::= {{ coq nat }} {{ tex \mathit{[[int]]} }}
 
 grammar
 
-typ, A {{ tex A }}, B {{ tex B }}, C {{ tex C }}, Char {{ tex \mathsf{Char} }}, Bool {{ tex \mathsf{Bool} }}, UKN {{ tex \,?\, }} :: 't_' ::= {{ com types }}
+typ, A {{ tex A }}, B {{ tex B }}, C {{ tex C }} :: 't_' ::= {{ com types }}
   | X              ::  :: var    {{ com type variable }}
-  | Int            ::  :: int     {{ tex \mathsf{Int}  }} {{ com int }}
+  | Int            ::  :: int     {{ tex \mathsf{Int}  }} {{ com int type }}
   % | Top            ::  :: top     {{ tex \mathsf{Top}  }} {{ com top type }}
   | A -> B         ::  :: arrow   {{ com function type }}
   | mu X . A       ::  :: mu      (+ bind X in A +)
@@ -33,16 +33,16 @@ typ, A {{ tex A }}, B {{ tex B }}, C {{ tex C }}, Char {{ tex \mathsf{Char} }}, 
 exp, e {{ tex e }}, v {{ tex v }}, u {{ tex u }}, v_f {{ tex v_f }} :: 'e_' ::= {{ com expressions }}
   | x              ::  :: var     {{ com variable }}
   % | T              ::  :: top     {{ com top }}
-  | i              ::  :: lit     {{ com lit }}
+  | i              ::  :: lit     {{ com literal value }}
   | \ x : A . e
                    ::  :: abs     (+ bind x in e +)
-                                  {{ com abstraction with argument annotation }}
+                                  {{ com function abstraction }}
                                   {{ tex \lambda [[x]][[:]][[A]].\,[[e]] }}
   % | fix x : A . e  ::  :: fixpoint
   %                                 (+ bind x in e +)
   %                                 {{ com fixpoint }}
   %                                 {{ tex [[fix]]~[[x]][[:]][[A]].\,[[e]] }}
-  | e1 e2          ::  :: app     {{ com applications }}
+  | e1 e2          ::  :: app     {{ com function applications }}
   | cast [ c ] e   :: :: cast    
   | e1 [ x |-> e2 ] :: M:: subst   {{ coq (open_exp_wrt_exp [[x e1]][[e2]]) }}
 
@@ -50,19 +50,15 @@ exp, e {{ tex e }}, v {{ tex v }}, u {{ tex u }}, v_f {{ tex v_f }} :: 'e_' ::= 
   | 1              :: M:: one     {{ tex 1 }} {{ coq (e_lit 1) }}
   | 2              :: M:: two     {{ tex 2 }} {{ coq (e_lit 2) }}
 
-mode, m {{ tex m }} :: 'm_' ::= {{ com modes }}
-  | pos       ::   ::  pos    {{ com positive }} {{ tex \oplus }}
-  | neg       ::   ::  neg    {{ com negative }} {{ tex \ominus }}
-
 
 castop, c {{ tex c }} :: 'c_' ::= {{ com cast operators }}
-  | cx           ::  :: var     {{ com cast variable }}
+  | cx           ::  :: var     {{ tex \iota }}  {{ com cast variable }}
   % | ~ cx           ::  :: revvar     {{ com reverse cast variable }}
   | id           ::   ::  id      {{ com id operator }} {{ tex \mathsf{id} }}
-  | unfold [ A ] ::   ::  unfold  {{ com unfold operator }} {{ tex \downarrow_{[[A]]} }}
-  | fold [ A ]   ::   ::  fold    {{ com castdn }} {{ tex \uparrow_{[[A]]} }}
+  | unfold [ A ] ::   ::  unfold  {{ com unfold operator }} {{ tex \textsf{unfold}_{[[A]]} }}
+  | fold [ A ]   ::   ::  fold    {{ com castdn }} {{ tex \textsf{fold}_{[[A]]} }}
   | c1 -> c2     ::   ::  arrow   {{ com arrow operator }} {{ tex [[c1]]\rightarrow[[c2]] }}
-  | c1 . c2      ::   ::  seq     {{ com composition of a sequence of ops }} {{ tex [[c1]] \cdot [[c2]] }}
+  | c1 . c2      ::   ::  seq     {{ com composition of casts }} {{ tex [[c1]] \cdot [[c2]] }}
   | fixc cx . c   ::   ::  fixc    (+ bind cx in c +)
     {{ com fixpoint }} {{ tex \mathsf{fix} ~ [[cx]] .\, [[c]] }}
   | ~ c         ::  M  ::  reverse     {{ com reverse operator }} {{ tex \neg [[c]] }} {{coq (rev_cast [[c]]) }}
@@ -107,7 +103,7 @@ parsing
 
 grammar
 
-ctx, G {{ tex \Gamma }} :: 'ctx_' ::=  {{ com term context }} {{ coq list ( atom * typ ) }}
+ctx, G {{ tex \Gamma }} :: 'ctx_' ::=  {{ com Typing context }} {{ coq list ( atom * typ ) }}
   | []              ::  :: empty       {{ coq nil }}
                                        {{ tex \cdot }}
   | G , x : A       ::  :: cons        {{ coq (cons ([[x]],[[A]]) [[G]]) }}
@@ -115,7 +111,7 @@ ctx, G {{ tex \Gamma }} :: 'ctx_' ::=  {{ com term context }} {{ coq list ( atom
   | G1 , x : A , G2 :: M:: constwo_mid {{ coq ([[G2]] ++ (cons ([[x]],[[A]]) [[G1]])) }}
 
 
-tctx, D {{ tex \Delta }} :: 'tctx_' ::= {{ com type context }} {{ coq list ( atom * unit ) }}
+tctx, D {{ tex \Delta }} :: 'tctx_' ::= {{ com Type variable context }} {{ coq list ( atom * unit ) }}
   | []              ::  :: empty        {{ coq nil }}
                                         {{ tex \cdot }}
   | D , X           ::  :: cons         {{ coq (cons ([[X]],tt ) [[D]]) }}
@@ -123,15 +119,17 @@ tctx, D {{ tex \Delta }} :: 'tctx_' ::= {{ com type context }} {{ coq list ( ato
   | D1 , X , D2     :: M:: constwo_mid  {{ coq ([[D2]] ++ (cons ([[X]],tt ) [[D1]])) }}
 
 
-cctx, E {{ tex \mathbb{E} }} :: 'cctx_' ::= {{ com cast context }} {{ coq list ( atom * (typ * typ)) }}
+cctx, E {{ tex \mathbb{E} }} :: 'cctx_' ::= {{ com Casting context }} {{ coq list ( atom * (typ * typ)) }}
   | []               ::  :: empty        {{ coq nil }} {{ tex \cdot }}
   | E , cx : A ~~> B ::  :: cons         {{ coq (cons ([[cx]], ([[A]], [[B]])) [[E]]) }}
+                                         {{ tex [[ E ]] ,  [[cx]]  [[A]] \rightarrow [[B]] }}
   % | rev E      :: M :: rev         {{ coq (reverse_E [[E]]) }}
   | ( E )           :: S :: paren        {{ coq ([[E]]) }}
 
-actx, H {{ tex H }} :: 'actx_' ::= {{ com assumption context }} {{ coq list ((typ * typ)) }}
+actx, H {{ tex H }} :: 'actx_' ::= {{ com Assumption context }} {{ coq list ((typ * typ)) }}
   | []               ::  :: empty        {{ coq nil }} {{ tex \cdot }}
   | ( A , B ) , H     ::  :: cons         {{ coq (cons ([[A]], [[B]]) [[H]]) }}
+                                         {{ tex [[H]],  [[A]] \doteq [[B]]   }}
   | ( H )           :: S :: paren        {{ coq ([[H]]) }}
 
 
@@ -157,6 +155,8 @@ terminals :: 'terminals_' ::=
   | |->          ::  :: tsubst     {{ tex \mapsto }}
   | <            ::  :: val2exprl  {{ tex \langle}}
   | >            ::  :: val2exprr  {{ tex \rangle}}
+  | |>          ::  :: val2expr   {{ tex \rhd}}
+  | =.           ::  :: Tyeeq       {{ tex \doteq }}
   | topl         ::  :: topl       {{ tex \rceil }}
   | topr         ::  :: topr       {{ tex \lceil }}
   | fix          ::  :: fixpoint   {{ tex \mathsf{fix} }}
@@ -181,7 +181,7 @@ formula :: 'formula_' ::=
     {{ tex }}
   | uniq E                   ::   :: uniqE
     {{ coq uniq [[E]] }}
-    {{ tex uniq [[E]] }}
+    {{ tex  \text { NoDup }  dom([[E]])}}
   | x : A in G               ::   :: inG
     {{ coq binds [[x]][[A]][[G]] }}
   | x notin fv e             ::   :: fresh
@@ -216,7 +216,7 @@ formula :: 'formula_' ::=
     {{ tex [[e1]]~[[-->]]^*~[[e2]] }}
   | A ~~> B : cx in E               ::   :: InEx
     {{ coq In ([[cx]], ([[A]], [[B]])) [[E]] }}
-    {{ tex [[A]] \hookrightarrow [[B]] : [[cx]] \in [[E]] }}
+    {{ tex [[cx]] : [[A]] \hookrightarrow [[B]]  \in [[E]] }}
   | A =. B              ::  :: Tyeq
       {{ coq Tyeq [[A]] [[B]] }}
       {{ tex [[A]] \sim [[B]] }}
@@ -303,7 +303,7 @@ TypCast :: '' ::=
 
 defn
 D ; E |- A ~~> B : c ::  :: TypCast :: 'TCast_'
-{{ com Typing Reduction Rules }}
+{{ com Type Casting Rules }}
 by
 
 D |- A
@@ -372,7 +372,7 @@ Typing :: '' ::=
 
 defn
 G |- e : A ::  :: Typing :: 'Typing_'
-{{ com Typing rules }}
+{{ com Full Iso-recursive Typing rules }}
 by
 
 

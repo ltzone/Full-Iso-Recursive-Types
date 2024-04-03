@@ -41,14 +41,6 @@ Scheme exp_rec' := Induction for exp Sort Set.
 
 Combined Scheme exp_mutrec from exp_rec'.
 
-Scheme mode_ind' := Induction for mode Sort Prop.
-
-Combined Scheme mode_mutind from mode_ind'.
-
-Scheme mode_rec' := Induction for mode Sort Set.
-
-Combined Scheme mode_mutrec from mode_rec'.
-
 
 (* *********************************************************************** *)
 (** * Size *)
@@ -83,12 +75,6 @@ Fixpoint size_exp (e1 : exp) {struct e1} : nat :=
     | e_abs A1 e2 => 1 + (size_typ A1) + (size_exp e2)
     | e_app e2 e3 => 1 + (size_exp e2) + (size_exp e3)
     | e_cast c1 e2 => 1 + (size_castop c1) + (size_exp e2)
-  end.
-
-Fixpoint size_mode (m1 : mode) {struct m1} : nat :=
-  match m1 with
-    | m_pos => 1
-    | m_neg => 1
   end.
 
 
@@ -471,25 +457,6 @@ pose proof size_exp_min_mutual as H; intuition eauto.
 Qed.
 
 #[export] Hint Resolve size_exp_min : lngen.
-
-(* begin hide *)
-
-Lemma size_mode_min_mutual :
-(forall m1, 1 <= size_mode m1).
-Proof.
-apply_mutual_ind mode_mutind;
-default_simp.
-Qed.
-
-(* end hide *)
-
-Lemma size_mode_min :
-forall m1, 1 <= size_mode m1.
-Proof.
-pose proof size_mode_min_mutual as H; intuition eauto.
-Qed.
-
-#[export] Hint Resolve size_mode_min : lngen.
 
 (* begin hide *)
 
@@ -4729,12 +4696,6 @@ Ltac exp_lc_exists_tac :=
               let J1 := fresh in pose proof H as J1; apply degree_exp_wrt_typ_of_lc_exp in J1;
               let J2 := fresh in pose proof H as J2; apply degree_exp_wrt_castop_of_lc_exp in J2;
               let J3 := fresh in pose proof H as J3; apply degree_exp_wrt_exp_of_lc_exp in J3; clear H
-          end).
-
-Ltac mode_lc_exists_tac :=
-  repeat (match goal with
-            | H : _ |- _ =>
-              fail 1
           end).
 
 Lemma lc_t_mu_exists :

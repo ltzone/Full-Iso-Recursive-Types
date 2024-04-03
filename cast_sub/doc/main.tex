@@ -59,8 +59,17 @@
 \inputott{rules}
 
 
-\title{Iso $\mathsf{\lambda}_{\mu}$ with casting}
-\author{Annoymous}
+\newcommand{\cid}{\textsf{id}}
+\newcommand{\cfold}[1]{\textsf{fold}_{#1}}
+\newcommand{\cunfold}[1]{\textsf{unfold}_{#1}}
+\newcommand{\cseq}[2]{#1 ; #2}
+\newcommand{\cfix}[2]{\textsf{fix}\,{#1}.~#2}
+
+\newcommand{\graybox}[1]{\colorbox{gray!20}{#1}}
+\newcommand{\grayboxm}[1]{\text{ \graybox{$ #1 $}}} % graybox in math mode
+
+\title{Full Iso-recursive Types}
+% \author{Annoymous}
 
 \begin{document}
 
@@ -83,12 +92,21 @@
 
 \ottgrammar
 
+
 \section{Subtyping}
 
+\ottdefnsAmberWellFormedEnv
+
+\ottdefnsAmberWellFormedType
+
+\ottdefnsAmberSubtyping
+
+\ottdefnsACSubtyping
+
+
+\section{Full Iso-recursive Typing}
+
 \ottdefnsWellFormedTypeEnv
-
-
-\section{Typing}
 
 \ottdefnsWellFormedTermEnv
 
@@ -96,17 +114,44 @@
 
 \ottdefnsTypCast
 
+
 \ottdefnsTyping
 
+\section{Equi-recursive Typing}
+
+\ottdefnseqe
+
+\ottdefnsEquiTyping
+
+\ottdefnsEquiTypingC
 
 
-\section{Semantics}
+\section{Dynamic Semantics}
+
+The reverse of a cast is defined as follows:
+
+$$
+\begin{array}{llll}
+  \neg\, \iota &= \iota & 
+  \neg\, \cid &= \cid \\
+  \neg\, \cfold{A} &= \cunfold{A} & 
+  \neg\, \cunfold{A} &= \cfold{A} \\
+  \neg\, (c_1 \to c_2) &= (\neg\, c_1) \to (\neg\, c_2) & 
+  \neg\, (\cseq{c_1}{c_2}) &= \cseq{(\neg\, c_2)}{(\neg\, c_1)} \\
+  \neg\, (\cfix{\iota}{c}) &= \cfix{\iota}{\neg\, c}  
+\end{array}
+$$
+
+
 
 \ottdefnsValues
 
 % \ottdefnsDualCast
 
 \ottdefnsReduction
+
+The rules above define the dynamic semantics for full iso-recursive types.
+For equi-recursive types, only the first three rules in the reduction rules are needed.
 
 
 \end{document}

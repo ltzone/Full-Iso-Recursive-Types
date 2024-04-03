@@ -494,3 +494,20 @@ Proof with auto.
   apply Isowft_AmberWFT in H.
   rewrite back_trans_ty in H...
 Qed.
+
+Theorem AmberWFT_refl: forall G A,
+  AmberWF G -> typefv_typ A [=] AtomSetImpl.empty ->
+  AmberWFT G A -> AmberSubtyping G A A.
+Proof with auto.
+  intros.
+  inductions H1...
+  - simpl  in H0. exfalso. specialize (H0 X). fsetdec.
+  - simpl  in H0. exfalso. specialize (H0 Y). fsetdec.
+  - simpl in H0.
+    constructor. apply IHAmberWFT1... { fsetdec. }
+    apply IHAmberWFT2... { fsetdec. }
+  - apply ASub_self...
+    { apply AWFT_rec with (L:=L).
+      apply Y. intros. 
+      apply H1... }
+Qed.

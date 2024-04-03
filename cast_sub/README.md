@@ -10,9 +10,8 @@
 | Fig. 5. Full iso-recursive elaboration                     | syntax_ott.v | $\Gamma \vdash_e e : A \rhd e' $ | `EquiTypingC` |
 | Fig. 6. Reduction rules                                    | syntax_ott.v | $e \hookrightarrow e' $ | `Red` |
 
-Note, in the formalization of Brandt and Henglein's type equality, unlike the paper,
-  we add a type context and well-formedness check to the rules, to be consistent with the rest of the rules.
-
+Note, the elaboration rule `ETyp-sub` presented in the paper is a lemma instead of a rule in the Coq formalization,
+  which can be derived from `ETyp-isub` and `ETyp-eq`.
 
 ## Paper to Proof Table
 
@@ -22,14 +21,12 @@ The paper to proof table:
 
 | Theorem | File | Name in Coq |
 | ------- | ----- | ----------- |
-| Theorem 3.1 Determinism of type casting                      | TBD | TBD |
-| Theorem 3.2 Soundness of Type Casting                        | theorems.v | `TypCast_soundness` |
-| Theorem 3.2 Completeness of Type Casting                     | theorems.v | `TypCast_completeness` |
-| Theorem 3.3 Equivalence of Alternative equi-recursive typing | theorems.v | `equi_alt_equiv` |
-| Theorem 3.4 Equi-recursive to full iso-recursive typing      | theorems.v | `EquiTypingC_sem` |
-| Theorem 3.5 Full iso-recursive to equi-recursive typing      | theorems.v | `typing_i2e` |
-| Theorem 3.6 Round-tripping of the encoding                   | theorems.v | `erase_typing` |
-| Theorem 3.7 Progress                                         | Progress.v | `progress` |
-| Theorem 3.8 Preservation                                     | Preservation.v | `preservation` |
-| Theorem 3.9 Full iso-recursive to equi-recursive reduction   | theorems.v | `reductions_i2e` |
-| Theorem 3.10 Behavioral equivalence                          | theorems.v | `behavior_equiv` |
+| Theorem 5.1 Transitivity of Iso-recursive Subtyping          | subtyping.v | `AmberSub_trans` |
+| Theorem 5.2 Unfolding Lemma                                  | subtyping.v | `unfolding_lemma` |
+| Theorem 5.3(1) Progress                                      | Progress.v | `progress` |
+| Theorem 5.3(2) Preservation                                  | Preservation.v | `preservation` |
+| Theorem 5.4 Equi-recursive subtyping decomposition           | theorems.v | `subtyping_decomposition` |
+| Theorem 5.5(1) Typing Equivalence - soundness                | theorems.v | `typing_i2e` |
+| Theorem 5.5(2) Typing Equivalence - completeness             | theorems.v | `EquiTypingC_sem` |
+| Theorem 5.5(3) Typing Equivalence - round-tripping           | theorems.v | `erase_typing` |
+| Theorem 5.6(1) Behavioral Equivalence                        | theorems.v | `behavior_equiv` |

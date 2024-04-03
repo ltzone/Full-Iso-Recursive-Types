@@ -5,7 +5,36 @@ Require Import Lia.
 Require Import Relation_Operators.
 Require Import Operators_Properties.
 
-Require Export equiAux.
+Require Export theorems.
+
+
+Theorem TypCast_det: forall D G A B c,
+  TypCast D G A B c -> 
+    (forall B', TypCast D G A B' c -> B = B')
+    /\ (forall A', TypCast D G A' B c -> A = A').
+Proof with auto.
+  introv Htc.
+  inductions Htc;
+    try destruct IHHtc1 as [IH1a IH1b];
+    try destruct IHHtc2 as [IH2a IH2b];
+    split;introv Htc';inv Htc'...
+  - rewrite (IH1a _ H5).
+    rewrite (IH2a _ H7)...
+  - rewrite (IH1b _ H5).
+    rewrite (IH2b _ H7)...
+  - forwards: IH1a H5. subst...
+  - forwards: IH2b H6. subst...
+  - forwards (?&?): typcast_var_det H1 H2 H11...
+  - forwards (?&?): typcast_var_det H1 H2 H11...
+  - 
+    pick_fresh cx. specialize_x_and_L cx L.
+    specialize_x_and_L cx L0.
+    destruct H0 as [IH1a IH1b].
+    destruct H2 as [IH2a IH2b].
+    apply IH1a in H9.
+
+
+
 
 Inductive lc_cast: castop -> Prop :=
 | lc_cast_var_f : forall x, lc_cast (c_var_f x)
@@ -122,32 +151,5 @@ Proof with auto.
   - forwards (?&?): typcast_var_det H5 H7 H11...
 
 
-
-
-
-Theorem TypCast_det: forall D G A B c,
-  TypCast D G A B c -> 
-    (forall B', TypCast D G A B' c -> B = B')
-    /\ (forall A', TypCast D G A' B c -> A = A').
-Proof with auto.
-  introv Htc.
-  inductions Htc;
-    try destruct IHHtc1 as [IH1a IH1b];
-    try destruct IHHtc2 as [IH2a IH2b];
-    split;introv Htc';inv Htc'...
-  - rewrite (IH1a _ H5).
-    rewrite (IH2a _ H7)...
-  - rewrite (IH1b _ H5).
-    rewrite (IH2b _ H7)...
-  - forwards: IH1a H5. subst...
-  - forwards: IH2b H6. subst...
-  - forwards (?&?): typcast_var_det H1 H2 H11...
-  - forwards (?&?): typcast_var_det H1 H2 H11...
-  - 
-    pick_fresh cx. specialize_x_and_L cx L.
-    specialize_x_and_L cx L0.
-    destruct H0 as [IH1a IH1b].
-    destruct H2 as [IH2a IH2b].
-    apply IH1a in H9.
 
 

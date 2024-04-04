@@ -74,7 +74,7 @@ coq: $(COQMKFILENAME) $(VFILES)
 	@$(MAKE) -f CoqSrc.mk
 
 clean:
-	rm -f **/*.vo  **/*.vos **/*.vok **/*.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d
+	rm -f *.vo  *.vos *.vok *.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d
 	rm -rf $(DOCDIR) $(COQMKFILENAME) $(COQMKFILENAME).conf
 
 realclean: clean

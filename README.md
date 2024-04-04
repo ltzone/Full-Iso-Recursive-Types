@@ -1,137 +1,10 @@
-# full-iso
-Extending iso-recursive type systems (with unfold/folds) to a more generalized form via casting
-
-
-## TODO and TIMELINE
-
-- [x] The type safety for `cast_main_ext`
-- [ ] Typing equivalence to the equi-recursive type system
-  - [x] If `G |-i E : A` then `G |- e |E| : A`
-  - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
-    - [x] special treatment of cast operator substitution for `eqe -> TypCast`
-    - [ ] completeness of `Coinductive Tyeq -> eqe` **Admitted**
-- [x] Behavioral equivalence to the equi-recursive type system
-  - [x] If `E -->i E'` then `|E| -->e* |E'|`
-  - [x] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
-- [x] Full-iso causes no computation overhead
-  - [x] If `⋅ |- e : T ▷ E` then `|E| = e` 
-  - [x] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
-        (direct if behavioral equivalence is proved)
-  - [x] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
-
-
-## the system with subtyping 
-
-
-- [ ] The type safety for `cast_main_ext`
-  - [ ] progress and preservation if castop/rev_env adjusted
-- [ ] Subtyping equivalence between Iso-Amber rules (presented in TOPLAS, with well formedness) and equi-Amber rules (presented by Henglein)
-  - [x] `Iso -> Equi` (straightforward)
-  - [ ] `Equi -> Iso` (?) 
-- [ ] Typing equivalence to the equi-recursive type system
-  - [x] If `G |-i E : A` then `G |- e |E| : A`
-  - [ ] If `G |- e : A` then exists `E`, `G |-i E : A /\ e = |E|`
-- [ ] Behavioral equivalence to the equi-recursive type system
-  - [ ] If `E -->i E'` then `|E| -->e* |E'|`
-  - [ ] If `⋅ |- e : T ▷ E` and ` e -->e  e'` then exists `E'`, `⋅ |- e' : T ▷ E' /\ E -->i* E'`
-- [ ] Full-iso causes no computation overhead
-  - [x] If `⋅ |- e : T ▷ E` then `|E| = e` 
-  - [ ] If `. |- e : T ▷ E` and `e -->e* v`, then exists `V`, `⋅ |- v : T ▷ V /\ E -->i* V` 
-        (direct if behavioral equivalence is proved)
-  - [ ] If `. |- e : T ▷ E` and `e -->e* diverge`, then `E -->i* diverge`
-
-
-
-
-## Project Structure
-
-Main projects for the paper:
-
-- `cast_main_ext`: the main project, containing the STLC + full-iso type system
-- `cast_main_sub`: STLC + full-iso type system + Amber style subtyping + relation to equi-recursive subtyping
-
-Other minor projects:
-
-- `cast_det`: does not define a cast language, the casting relation is a deterministic cast relation. This system is too weak to achieve the goal of this project.
-- `cast_rcd`: extend `cast_main` with merges and single field records (but without subtyping)
-- `cast_simple`: a simple version of `cast_main_ext` without fixpoints
-- `cast_simple_sub`: extend `cast_simple` with subtyping
-
-
-
-
-
-
-
-
-## Related work
-
-- [Abati 1996] Syntactic Considerations on Recursive Types
-- [Patrignani 2021] On the Semantic Expressiveness of Recursive Types
-
-
-
-
-
-
-## Introduction
-
-In iso-recursive type systems, the type `mu X. T` is isomorphic to `T[X -> mu X. T]`, witnessed by the unfold and fold operators. 
-
-```
-e : mu X. T
--------------------- Typing-Unfold
-unfold [mu X. T] e : T[X -> mu X. T]
-
-
-e : T[X -> mu X. T]
--------------------- Typing-Fold
-fold [mu X. T] e : mu X. T
-
----------------------------- Step-UnfoldFold
-unfold [mu X. T] (fold [mu X. T] v) --> v
-```
-
-However, this isomorphism is not enough to express some interesting programs. Examples can be found in CP languages in which we need to first implement recursive methods on several datatype constructors, and then combine them together to form a recursive datatype. When we combine them together, the fold operation works not on a term of type `T[X -> mu X. T]`, but on a function type from the constructor arguments to `T[X -> mu X. T]`. 
-
-Therefore, it is interesting to explore whether we can extend the iso-recursive type system to a more generalized form, in which the unfold/fold operation can work not only on a recursive type, but also other types that contain recursive type components.
-
-In this project, we propose the following typing rules and develop a type system called `full-iso`:
-
-```
-e : A
-A ~~> B : c
------------------------ Typing-Cast
-e : B
-```
-
-In which `A ~~> B : c` means that `A` can be cast to `B` witnessed by a cast language `c`. The cast language `c` describes the cast operations that can be used to cast `A` to `B`. For example,
-
-```
-------------------- Cast-id
-A ~~> A : id
-
-
-------------------- Cast-unfold
-mu X. T ~~> T[X -> mu X. T] : unfold [mu X. T]
-
-
-------------------- Cast-fold
-T[X -> mu X. T] ~~> mu X. T : fold [mu X. T]
-
-
-A1 ~~> B1 : c1
-A2 ~~> B2 : c2
-------------------- Cast-arr
-A1 -> A2 ~~> B1 -> B2 : c1 -> c2
-```
-
-With the above rules, (plus some other features in CP, such as merges, distributive subtyping, polymorphism, etc), we can encode modular programming features.
-
-Moreover, this work also draws connections between the iso-recursive type system and the equi-recursive type system. Traditionally, transforming equi-recursive typed terms into an iso-recursive type system requires inserting unfold/fold operations. This is typically done by applying a coercion function to the term. However, the application of the coercion on function types will change the computation structure. Therefore it poses challenges to prove that the converted term has the same behavior as the original term, since erasing the unfold/folds in converted term gets a different term from the original equi-recursive typed term. In our work, it is possible to insert direct casts on function types, which will not change the computation structure. Therefore, it can be hoped that the converted term has the same behavior as the original term, with a simpler proof.
+# Full Iso-recursive Types
 
 
 ## Building Instructions
+
+Our proofs are verified in Coq version **Coq 8.13.1**. We rely on the Coq library:
+[`metalib`](https://github.com/plclub/metalib/releases/tag/coq8.10) for the locally nameless representation in our proofs.
 
 ### Prerequisites
 
@@ -146,6 +19,12 @@ Moreover, this work also draws connections between the iso-recursive type system
    2. `git clone -b coq8.10 https://github.com/plclub/metalib`
    3. `cd metalib/Metalib`
    4. `make install`
+
+> For checking proofs of the paper, you can already stop here and use the provided 
+> `syntax_ott.v` and `rules_inf.v` files.
+> We have already built these files, which are generated by the `LNgen` and `Ott` 
+> tools. If you want to modify the rules, you can follow the rest of the instructions
+> below to install `LNgen` and `Ott`:
 
 3. Make sure `Haskell` with `stack` is installed, then install `LNgen`:
    1. Open terminal
@@ -164,11 +43,89 @@ Moreover, this work also draws connections between the iso-recursive type system
    Check the [Ott website](https://www.cl.cam.ac.uk/~pes20/ott/top2.html#sec7) for detailed instructions. Remember to switch to the correct [forked version](https://github.com/sweirich/ott) of `Ott 0.32` during the installation process.
 
 
-### Build Each Project
+  
 
-Each project contains a `spec/rules.ott` that specifies the rules of the type system. In `doc` directory there is a PDF version of the rules. The root of each project contains all the Coq proofs.
+### Build and Compile the Proofs
 
-Some useful `make` commands:
-- `make rules` will build the LaTeX rules (`doc/rules.tex`) from `rules.ott`, together with the `syntax_ott.v` file, which contains the Coq definitions of the rules automatically generated by `Ott`
-- `make pdf` will build a pdf based on the LaTeX rules and the `main.tex`
-- `make` will build all the Coq proofs
+1. Enter the coq directory you would like to build.
+
+2. Type `make` in the terminal to build and compile the proofs.
+
+Other `make` commands (with `LNgen` and `Ott` installed):
+```
+make rules # Generate the syntax_ott.v and rules_inf.v files
+make pdf   # Generate the latex pdf from the Ott specification
+make realclean # Clean all the generated files including documents
+make clean # Clean all the files generated by Coq checking
+```
+
+
+## Proof Structure
+
+There are two directories in this artifact. The `cast_main` directory contains the proofs for the main system presented in Section 3 and Section 4 of the paper. The `cast_sub` directory contains the proofs for the main system extended with subtyping presented in Section 5 of the paper.
+
+The `cast_main` and `cast_sub` share the same structure, in which all the proof files have a sequential dependency, as can be found in `_CoqProject` file of each directory. The proof starts from `syntax_ott.v`, which is generated from the Ott specification in `spec` directory, and ends with `theorems.v`. The `theorems.v` file contains most of the main theorems of the paper. There is also a `doc` directory that contains a latex pdf generated from the Ott specification that presents all the rules of each system.
+
+In addition, within `cast_sub` there is a subdirectory `subtyping` which contains the Coq proofs from the [artifact](https://github.com/juda/Iso-Recursive-Subtyping/tree/master/Journal/src) of the paper "Revisiting Iso-recursive Subtyping" (Zhou et al. 2022). We transported their results (e.g. unfolding lemma) to our setting through `subtyping.v` in the `cast_sub` directory.
+
+
+
+## Key Definitions in the Paper
+
+| Definition | File | Notation in Paper | Name in Coq
+| ----- | ------- | ------ | ------
+| Fig. 2. Brandt and Henglein's equi-recursive type equality | syntax_ott.v | $H \vdash A \doteq B$ | `eqe2` |
+| Fig. 4. Typing                                             | syntax_ott.v | $\Gamma \vdash e: A $ | `Typing` |
+| Fig. 4. Type Casting                                       | syntax_ott.v | $\Delta; \mathbb{E} \vdash A \hookrightarrow B : c $ | `TypCast` |
+| Fig. 5. Equi-recursive typing with rule Typ-eq             | syntax_ott.v | $\Gamma \vdash_e e : A $ | `EquiTyping` |
+| Fig. 5. Full iso-recursive elaboration                     | syntax_ott.v | $\Gamma \vdash_e e : A \rhd e' $ | `EquiTypingC` |
+| Fig. 6. Reduction rules                                    | syntax_ott.v | $e \hookrightarrow e' $ | `Red` |
+| Fig. 7. Iso-recursive Subtyping                            | syntax_ott.v | $\Sigma \vdash A \leq_{i} B $ | `AmberSubtyping` |
+| Fig. 7. Equi-recursive Subtyping                           | syntax_ott.v | $\Sigma \vdash A \leq_{e} B $ | `ACSubtyping` |
+
+Note, in the formalization of the rules in literature (e.g. Brandt and Henglein's equi-recursive type equality in Fig. 2, 
+  Iso-recursive Subtyping, and Equi-recursive Subtyping in Fig. 7),
+  we add a type context and well-formedness check to the rules in order to be consistent with the rest of the rules.
+The well-formedness conditions are omitted in the paper for simplicity.
+
+
+## Paper to Proof Table
+
+
+### The main system
+
+Contains the proofs for the main system presented in Section 3 and Section 4 of the paper.
+
+The paper to proof table:
+
+| Theorem | File | Name in Coq |
+| ------- | ----- | ----------- |
+| Theorem 3.1 Soundness of Type Casting                        | theorems.v | `TypCast_soundness` |
+| Theorem 3.1 Completeness of Type Casting                     | theorems.v | `TypCast_completeness` |
+| Theorem 3.2 Equivalence of Alternative equi-recursive typing | theorems.v | `equi_alt_equiv` |
+| Theorem 3.3 Equi-recursive to full iso-recursive typing      | theorems.v | `EquiTypingC_sem` |
+| Theorem 3.4 Full iso-recursive to equi-recursive typing      | theorems.v | `typing_i2e` |
+| Theorem 3.5 Round-tripping of the encoding                   | theorems.v | `erase_typing` |
+| Theorem 3.6 Progress                                         | Progress.v | `progress` |
+| Theorem 3.7 Preservation                                     | Preservation.v | `preservation` |
+| Theorem 3.8 Full iso-recursive to equi-recursive reduction   | theorems.v | `reductions_i2e` |
+| Theorem 3.9 Behavioral equivalence                           | theorems.v | `behavior_equiv` |
+ 
+### The subtyping system
+
+Contains the proofs for the main system extended with subtyping presented in Section 5 of the paper.
+
+The paper to proof table:
+
+| Theorem | File | Name in Coq |
+| ------- | ----- | ----------- |
+| Theorem 5.1 Reflxixivty of Iso-recursive Subtyping           | subtyping.v | `AmberWFT_refl` |
+| Theorem 5.2 Transitivity of Iso-recursive Subtyping          | subtyping.v | `AmberSub_trans` |
+| Lemma 5.3 Unfolding Lemma                                    | subtyping.v | `unfolding_lemma` |
+| Theorem 5.4(1) Progress                                      | Progress.v | `progress` |
+| Theorem 5.4(2) Preservation                                  | Preservation.v | `preservation` |
+| Theorem 5.5 Equi-recursive subtyping decomposition           | theorems.v | `subtyping_decomposition` |
+| Theorem 5.6(1) Typing Equivalence - soundness                | theorems.v | `typing_i2e` |
+| Theorem 5.6(2) Typing Equivalence - completeness             | theorems.v | `EquiTypingC_sem` |
+| Theorem 5.6(3) Typing Equivalence - round-tripping           | theorems.v | `erase_typing` |
+| Theorem 5.7 Behavioral Equivalence                           | theorems.v | `behavior_equiv` |

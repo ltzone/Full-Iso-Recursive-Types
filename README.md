@@ -34,11 +34,10 @@ Our proofs are verified in Coq version **Coq 8.13.1**. We rely on the Coq librar
 
 4. Install `Ott 0.32` if you want to rewrite the rules. Make sure `opam` is installed:
    1. Open terminal
-   2. `git clone https://github.com/sweirich/ott`
+   2. `git clone https://github.com/sweirich/ott -b ln-close`
    3. `cd ott`
    4. `opam pin add ott .`
-   5. `opam repo add coq-released https://coq.inria.fr/opam/released`
-   6. `opam pin add coq-ott 0.32`
+   5. `opam pin add coq-ott .`
 
    Check the [Ott website](https://www.cl.cam.ac.uk/~pes20/ott/top2.html#sec7) for detailed instructions. Remember to switch to the correct [forked version](https://github.com/sweirich/ott) of `Ott 0.32` during the installation process.
 

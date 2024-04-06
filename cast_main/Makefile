@@ -1,7 +1,7 @@
 ############################################################################
 #
 #  Primary targets:
-#    all           - the default target; synonym for 'coq'
+#    all           - the default target
 #    coq           - builds all .vo files
 #    doc           - builds PDF specification for all the rules
 #    clean         - removes generated Coq files

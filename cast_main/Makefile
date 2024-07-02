@@ -14,10 +14,10 @@
 
 
 
-ifeq ($(shell uname), Darwin)
-LATEXMK = latexmk
+ifneq (,$(findstring WSL, $(shell uname -r)))
+    LATEXMK = latexmk.exe
 else
-LATEXMK = latexmk.exe
+    LATEXMK = latexmk
 endif
 
 
@@ -74,11 +74,11 @@ coq: $(COQMKFILENAME) $(VFILES)
 	@$(MAKE) -f CoqSrc.mk
 
 clean:
-	rm -f *.vo  *.vos *.vok *.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d
+	rm -f *.vo  *.vos *.vok *.glob *.cmi *.cmx *.o .*.aux .CoqSrc.mk.d $(DOC_LOC)/*.fls  $(DOC_LOC)/*.log $(DOC_LOC)/*.fdb_latexmk  $(DOC_LOC)/*.aux .depend .lia.cache
 	rm -rf $(DOCDIR) $(COQMKFILENAME) $(COQMKFILENAME).conf
 
 realclean: clean
-	rm -f syntax_ott.v rules_inf.v $(DOC_LOC)/rules.tex $(DOC_LOC)/*.aux $(DOC_LOC)/*.fls  $(DOC_LOC)/*.log $(DOC_LOC)/*.fdb_latexmk $(DOC_LOC)/*.pdf
+	rm -f syntax_ott.v rules_inf.v $(DOC_LOC)/rules.tex $(DOC_LOC)/*.pdf
 
 rules: $(DOC_LOC)/rules.tex syntax_ott.v rules_inf.v
 

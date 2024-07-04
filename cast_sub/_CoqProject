@@ -3,14 +3,6 @@
 LibTactics.v
 syntax_ott.v
 rules_inf.v
-subtyping.v
-progress.v
-erasure.v
-equiRec.v
-preservation.v
-equiAux.v
-theorems.v
-
 subtyping/Rules.v
 subtyping/Infra.v
 subtyping/FiniteUnfolding.v
@@ -25,3 +17,10 @@ subtyping/AmberCompleteness.v
 subtyping/NominalUnfolding.v
 subtyping/AnchorUnfolding.v
 subtyping/Decidability.v
+subtyping.v
+progress.v
+erasure.v
+equiRec.v
+preservation.v
+equiAux.v
+theorems.v

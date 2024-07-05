@@ -224,7 +224,7 @@ Axioms:
 JMeq_eq : forall (A : Type) (x y : A), x ~= y -> x = y
 ```
 
-It should be the only axiom we rely on, which introduced by the use of `dependent induction`.
+It should be the only axiom we rely on, which is introduced by the use of `dependent induction`.
 
 ### Check Unproved Hypotheses
 

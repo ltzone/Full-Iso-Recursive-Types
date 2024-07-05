@@ -3,12 +3,12 @@
 
 ## Building Instructions
 
-Our proofs are verified in Coq version **Coq 8.13.1**. We rely on the Coq library:
+Our proofs are verified in Coq version **Coq 8.13.2**. We rely on the Coq library:
 [`metalib`](https://github.com/plclub/metalib/releases/tag/coq8.10) for the locally nameless representation in our proofs.
 
 ### Prerequisites
 
-1. Install Coq 8.13.1. The recommended way to install Coq is via `OPAM`. Refer to
+1. Install Coq 8.13.2. The recommended way to install Coq is via `OPAM`. Refer to
    [here](https://coq.inria.fr/opam/www/using.html) for detailed steps. Or one could
    download the pre-built packages for Windows and MacOS via
    [here](https://github.com/coq/coq/releases/tag/V8.13.2). Choose a suitable installer
@@ -78,7 +78,7 @@ In addition, within `cast_sub` there is a subdirectory `subtyping` which contain
 | Fig. 4. Type Casting                                       | syntax_ott.v | $\Delta; \mathbb{E} \vdash A \hookrightarrow B : c $ | `TypCast` |
 | Fig. 5. Equi-recursive typing with rule Typ-eq             | syntax_ott.v | $\Gamma \vdash_e e : A $ | `EquiTyping` |
 | Fig. 5. Full iso-recursive elaboration                     | syntax_ott.v | $\Gamma \vdash_e e : A \rhd e' $ | `EquiTypingC` |
-| Fig. 6. Reduction rules                                    | syntax_ott.v | $e \hookrightarrow e' $ | `Red` |
+| Fig. 6. Reduction rules                                    | syntax_ott.v | $e \hookrightarrow e' $ | `Reduction` |
 | Fig. 7. Iso-recursive Subtyping                            | syntax_ott.v | $\Sigma \vdash A \leq_{i} B $ | `AmberSubtyping` |
 | Fig. 7. Equi-recursive Subtyping                           | syntax_ott.v | $\Sigma \vdash A \leq_{e} B $ | `ACSubtyping` |
 

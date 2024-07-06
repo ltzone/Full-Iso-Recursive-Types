@@ -112,7 +112,7 @@ Install Docker first. You may refer to the [Docker Docs](https://docs.docker.com
 #### Prerequisites
 
 1. Install Coq 8.13.2. The recommended way to install Coq is via `OPAM`. Refer to
-   [here](https://coq.inria.fr/opam/www/using.html) for detailed steps. Or you could
+   [here](https://coq.inria.fr/opam-using.html) for detailed steps. Or you could
    download the pre-built packages for Windows and MacOS
    [here](https://github.com/coq/coq/releases/tag/V8.13.2). Choose a suitable installer
    according to your platform.

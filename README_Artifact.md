@@ -216,7 +216,10 @@ All the claims made by the paper, as shown in section [Proof Structure](#proof-s
 
 ### Check Axioms and Assumptions
 
-To verify the axioms that out proofs rely on, append `Print Assumptions behavior_equiv.` to the end of `theorems.v` (you may need to `sudo apt update && sudo apt install nano -y` (or `vim` based on your preference) first if you are inside the Docker image) and re-run `make`. You will see:
+To verify the axioms that out proofs rely on, you can use `Print Assumptions theorem_name` in Coq,
+by replacing `theorem_name` with the name of the theorem you want to check in the paper-to-proof table.
+
+For example, by adding `Print Assumptions behavior_equiv.` to the end of `theorems.v` (you may need to `sudo apt update && sudo apt install nano -y` (or `vim` based on your preference) first if you are inside the Docker image) and re-run `make`. You will see:
 
 ```coq
 COQC theorems.v
@@ -226,15 +229,33 @@ JMeq_eq : forall (A : Type) (x y : A), x ~= y -> x = y
 
 It should be the only axiom we rely on, which is introduced by the use of `dependent induction`.
 
+Alternatively, you may also run `grep -r "Axiom" .` under `/home/fulliso` to check all the axioms we introduce in the proofs.
+
+For the main system `cast_main` it will return:
+
+```
+./LibTactics.v:Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
+./LibTactics.v:Axiom skip_axiom : True.
+```
+
+which are the axioms introduced by the `LibTactics.v` file but not used in our proofs.
+
+For the subtyping system `cast_sub` it will return:
+
+```
+./LibTactics.v:Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
+./LibTactics.v:Axiom skip_axiom : True.
+./theorems.v:Axiom subtyping_decomposition: forall A B D (Hwfa: WFT D A) (Hwfb: WFT D B),
+```
+
+The `subtyping_decomposition` (Theorem 5.5 in the paper) is the only axiom we 
+introduce in the proofs and we explained the reason in the paper.
+
+
 ### Check Unproved Hypotheses
 
-Run `grep -r "Admitted\." .` under `/home/fulliso`, and you will only see
+Run `grep -r "Admitted\." .` under `/home/fulliso`, and there will be no output, indicating that all the proofs are complete.
 
-```
-./cast_sub/subtyping.v:Admitted. *)
-```
-
-which is inside the comment, meaning our proofs do not contain any unproved hypotheses.
 
 ### Other `make` Commands
 

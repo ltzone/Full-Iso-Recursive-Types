@@ -250,15 +250,6 @@ Hint Extern 1 (wf_amber ?AE (trans_ty ?A)) =>
   | H: AmberWFT AE A |- _ => apply AmberWFT_Isowft in H
   end : core.
 
-(* Lemma sam_reflexive: forall G A,
-  AmberBase.wfe_amber G ->
-  AmberBase.wf_amber G A ->
-  AmberBase.sub_amber G A A.
-Proof with auto.
-  intros.
-  inductions H0...
-  - apply sam_fvar.
-Admitted. *)
 
 Lemma AmberSubtyping_to_IsoSubtyping: forall G A B,
   AmberSubtyping G A B -> AmberBase.sub_amber G (trans_ty A) (trans_ty B).

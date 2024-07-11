@@ -80,6 +80,8 @@ Qed. *)
 
 Notation "e1 '==>*' e2" := (clos_refl_trans exp Reduction e1 e2) (at level 40).
 
+Notation "e1 '==>+' e2" := (clos_trans exp Reduction e1 e2) (at level 40).
+
 Lemma Red_appl_multi: forall e1 e2 e3,
   e1 ==>* e2 -> lc_exp e3 ->
   (e_app e1 e3) ==>* (e_app e2 e3).

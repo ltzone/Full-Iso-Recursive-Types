@@ -353,6 +353,17 @@ Proof with auto.
     apply rt_step. constructor...
 Qed.
 
+Lemma Red_ctx_cast': forall c e e', lc_castop c ->
+  e ==>+ e' -> e_cast c e ==>+ e_cast c e'.
+Proof with auto.
+  intros.
+  apply clos_trans_t1n in H0.
+  induction H0...
+  - apply t_step...
+  - applys t_trans IHclos_trans_1n.
+    apply t_step. constructor...
+Qed.
+
 Lemma Red_ctx_appl: forall e1 e1' e2, lc_exp e2 ->
   e1 ==>* e1' -> e_app e1 e2 ==>* e_app e1' e2.
 Proof with auto.
@@ -362,6 +373,17 @@ Proof with auto.
   - apply rt_refl.
   - applys rt_trans IHclos_refl_trans_1n.
     apply rt_step. constructor...
+Qed.
+
+Lemma Red_ctx_appl': forall e1 e1' e2, lc_exp e2 ->
+  e1 ==>+ e1' -> e_app e1 e2 ==>+ e_app e1' e2.
+Proof with auto.
+  intros.
+  apply clos_trans_t1n in H0.
+  induction H0...
+  - apply t_step...
+  - applys t_trans IHclos_trans_1n.
+    apply t_step. constructor...
 Qed.
 
 Lemma Red_ctx_appr: forall e1 e2 e2', value e1 ->
@@ -375,6 +397,16 @@ Proof with auto.
     apply rt_step. constructor...
 Qed.
 
+Lemma Red_ctx_appr': forall e1 e2 e2', value e1 ->
+  e2 ==>+ e2' -> e_app e1 e2 ==>+ e_app e1 e2'.
+Proof with auto.
+  intros.
+  apply clos_trans_t1n in H0.
+  induction H0...
+  - apply t_step...
+  - applys t_trans IHclos_trans_1n.
+    apply t_step. constructor...
+Qed.
 
 
 Lemma ECTyping_value: forall e t e',
@@ -484,11 +516,29 @@ Proof with auto.
 Qed.
 
 
+Lemma clos_rt_t' : forall A (R: relation A) x y z,
+  clos_trans A R x y -> clos_refl_trans A R y z ->
+  clos_trans A R x z.
+Proof.
+  induction 2; auto.
+  apply (t_trans _ _ _ x0); auto.
+  constructor. auto.
+Qed.
+
+Lemma clos_t_rt : forall A (R: relation A) x y,
+  clos_trans A R x y ->
+  clos_refl_trans A R x y.
+Proof with auto.
+  induction 1...
+  - apply rt_step...
+  - applys* rt_trans y.
+Qed.
+
 Lemma reduction_app: forall A e1 e1' e2 e2' A1 A2,
 EquiTypingC nil (e_abs A e1) (t_arrow A1 A2) e1' ->
 EquiTypingC nil e2 A1 e2' ->
 value e1' -> value e2 ->
-exists e', (e_app e1' e2') ==>* e' /\ EquiTypingC nil (open_exp_wrt_exp e1 e2) A2 e'.
+exists e', (e_app e1' e2') ==>+ e' /\ EquiTypingC nil (open_exp_wrt_exp e1 e2) A2 e'.
 Proof with auto.
   introv Hty1 Hty2 Hval1 Hval2.
   gen e2 e2'. inductions Hty1;intros.
@@ -499,7 +549,7 @@ Proof with auto.
     forwards (Hty2e & Hty2i): EquiTypingC_sem Hty2.
     exists (open_exp_wrt_exp e' v2'). split.
     {
-      applys rt_trans (e_app (e_abs A1 e') v2'). 
+      applys clos_rt_t (e_app (e_abs A1 e') v2'). (* t_trans is too strong here *)
       { applys Red_ctx_appr... }
       constructor. constructor... { apply value_lc_exp... }
     }
@@ -523,11 +573,11 @@ Proof with auto.
     exists (e_cast c2 v'').
     split.
     +
-      applys rt_trans (e_app (e_cast (c_arrow c1 c2) e') v2').
+      applys clos_rt_t (e_app (e_cast (c_arrow c1 c2) e') v2').
       { applys Red_ctx_appr... }
-      applys rt_trans (e_cast c2 (e_app e' (e_cast (rev_cast c1) v2'))).
+      applys t_trans (e_cast c2 (e_app e' (e_cast (rev_cast c1) v2'))).
       { constructor. constructor... }
-      applys Red_ctx_cast...
+      applys Red_ctx_cast'...
     +
       eapply ECTyping_eq;eassumption.
 Qed.
@@ -556,7 +606,7 @@ Qed.
 Theorem reduction_e2i: forall e1 e1' e2 t,
   EquiTypingC nil e1 t e1' ->
   Reduction e1 e2 ->
-  exists e2', e1' ==>* e2' /\ EquiTypingC nil e2 t e2'.
+  exists e2', e1' ==>+ e2' /\ EquiTypingC nil e2 t e2'.
 Proof with auto.
   introv Hty Hred.
   gen e1' t. induction Hred;intros; try solve [inductions Hty]...
@@ -567,20 +617,20 @@ Proof with auto.
       forwards (Hty1e' & Hty1i'): EquiTypingC_sem Hty1'.
       forwards (v'' & Hred' & Hty'): reduction_app Hty1' Hty2...
       exists v''. split...
-      { applys rt_trans Hred'. applys Red_ctx_appl... }
+      { applys clos_rt_t Hred'. applys Red_ctx_appl... }
     + forwards* (e2' & Hred' & Hty'): IHHty.
       exists (e_cast c e2'). split.
-      { applys Red_ctx_cast... }
+      { applys Red_ctx_cast'... }
       { eapply ECTyping_eq;eassumption. }
   -
     inductions Hty.
     + forwards* (e1'' & Hred' & Hty'): IHHred.
       exists (e_app e1'' e2'). split.
-      { applys Red_ctx_appl... }
+      { applys Red_ctx_appl'... }
       { eapply ECTyping_app. apply Hty'. apply Hty2. }
     + forwards* (e'' & Hred' & Hty'): IHHty. { apply IHHred. }
       exists (e_cast c e''). split.
-      { applys Red_ctx_cast... }
+      { applys Red_ctx_cast'... }
       { eapply ECTyping_eq;eassumption. }
   -
     inductions Hty.
@@ -588,11 +638,11 @@ Proof with auto.
       forwards (v1' & Hred1 & Hval1' & Hty1'): ECTyping_value Hty1...
       forwards* (e2'' & Hred' & Hty'): IHHred.
       exists (e_app v1' e2''). split.
-      { applys rt_trans (e_app v1' e2'0). applys Red_ctx_appl...
-        applys Red_ctx_appr... } { eapply ECTyping_app;eassumption. }
+      { applys clos_rt_t (e_app v1' e2'0). applys Red_ctx_appl...
+        applys Red_ctx_appr'... } { eapply ECTyping_app;eassumption. }
     + forwards* (e'' & Hred' & Hty'): IHHty. { apply IHHred. }
       exists (e_cast c e''). split.
-      { applys Red_ctx_cast... } { eapply ECTyping_eq;eassumption. }
+      { applys Red_ctx_cast'... } { eapply ECTyping_eq;eassumption. }
   -
     forwards Hequi: ECTyping_equi_expr_lc Hty.
     inverts Hequi as He1 He2.
@@ -635,6 +685,7 @@ Proof with auto.
   -
     forwards: reduction_e2i H2 H.
     destruct H3 as [e1 [Hred1 Hty1]].
+    apply clos_t_rt in Hred1.
     forwards [v' [Hred2 Hty2]]: IHclos_refl_trans_1n Hty1...
     exists v'. repeat split...
     eapply rt_trans;eassumption.  

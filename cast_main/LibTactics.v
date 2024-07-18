@@ -2697,9 +2697,11 @@ invert_tactic H (fun H => invert keep H as I1 I2 I3).
 (* --we do not import Eqdep because it imports nasty hints automatically
   From TLC Require Import Eqdep. *)
 
-Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
+Require Import Coq.Program.Equality.
+
+(* Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
 forall (U : Type) (P : U -> Type) (p : U) (x y : P p),
-existT P p x = existT P p y -> x = y.
+existT P p x = existT P p y -> x = y. *)
 (* Proof using. apply Eqdep.EqdepTheory.inj_pair2. Qed. *)
 
 Ltac inverts_tactic H i1 i2 i3 i4 i5 i6 :=
@@ -3119,7 +3121,7 @@ let Eq := fresh "C" in cases_if' as Eq.
   [inductions E gen X1 .. XN] is a shorthand for
   [dependent induction E generalizing X1 .. XN]. *)
 
-Require Import Coq.Program.Equality.
+
 
 Ltac inductions_post :=
 unfold eq' in *.
@@ -4861,7 +4863,7 @@ clears_last_base N.
 *)
 
 (** To obtain a safe development, change to [skip_axiom : True] *)
-Axiom skip_axiom : True.
+(* Axiom skip_axiom : True.
 
 Ltac skip_with_axiom :=
 elimtype False; apply skip_axiom.
@@ -4948,7 +4950,7 @@ forwards_nounfold_then S ltac:(fun K =>
 match goal with
 | MARK: ltac_goal_to_discard |- _ => skip
 | _ => idtac
-end.
+end. *)
 
 
 (* ################################################################# *)

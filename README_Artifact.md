@@ -9,9 +9,9 @@ We provide both pre-configured Docker image and original source code in the arti
 ### Proof Assistant and Libraries Dependency
 
 Our proofs are verified in **Coq 8.13.2**. We rely on the Coq library:
-[`metalib`](https://github.com/plclub/metalib/releases/tag/coq8.10) to formalize variables and binders using the Locally Nameless representation (Aydemir et al., 2008) in our proofs.
+[`Metalib`](https://github.com/plclub/metalib/releases/tag/coq8.10) to formalize variables and binders using the Locally Nameless representation (Aydemir et al., 2008) in our proofs.
 We use [`Ott`](https://github.com/sweirich/ott) to write the definitions and [`LNgen`](https://github.com/plclub/lngen) to generate Locally Nameless definitions and proofs.
-We also use [`LibTactics.v`](./cast_main/LibTactics.v) from [the TLC Coq library](https://www.chargueraud.org/softs/tlc/)
+We also use (a modified distribution of) [`LibTactics.v`](./cast_main/LibTactics.v) from [the TLC Coq library](https://www.chargueraud.org/softs/tlc/)
 by Arthur Chargueraud.
 
 ### Proof Structure
@@ -219,7 +219,7 @@ All the claims made by the paper, as shown in section [Proof Structure](#proof-s
 To verify the axioms that out proofs rely on, you can use `Print Assumptions theorem_name` in Coq,
 by replacing `theorem_name` with the name of the theorem you want to check in the paper-to-proof table.
 
-For example, by adding `Print Assumptions behavior_equiv.` to the end of `theorems.v` (you may need to `sudo apt update && sudo apt install nano -y` (or `vim` based on your preference) first if you are inside the Docker image) and re-run `make`. You will see:
+For example, by adding `Print Assumptions behavior_equiv.` to the end of `theorems.v` (you may need to `sudo apt update && sudo apt install nano -y` (or `vim` based on your preference) first if you are inside the Docker image) and re-run `make`, you will see:
 
 ```coq
 COQC theorems.v
@@ -227,34 +227,154 @@ Axioms:
 JMeq_eq : forall (A : Type) (x y : A), x ~= y -> x = y
 ```
 
-It should be the only axiom we rely on, which is introduced by the use of `dependent induction`.
+It should be the only axiom that the `behavior_equiv` theorem relies on, which is introduced by the use of `dependent induction`.
 
-Alternatively, you may also run `grep -r "Axiom" .` under `/home/fulliso` to check all the axioms we introduce in the proofs.
+---
 
-For the main system `cast_main` it will return:
+To show axioms we defined across the whole proof, you may run `grep -Ir "Axiom" .` under `/home/fulliso`.
 
-```
-./LibTactics.v:Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
-./LibTactics.v:Axiom skip_axiom : True.
-```
-
-which are the axioms introduced by the `LibTactics.v` file but not used in our proofs.
-
-For the subtyping system `cast_sub` it will return:
+For the main system `cast_main` it will return nothing, and
+for the subtyping system `cast_sub` it will return:
 
 ```
-./LibTactics.v:Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
-./LibTactics.v:Axiom skip_axiom : True.
 ./theorems.v:Axiom subtyping_decomposition: forall A B D (Hwfa: WFT D A) (Hwfb: WFT D B),
 ```
 
 The `subtyping_decomposition` (Theorem 5.5 in the paper) is the only axiom we 
-introduce in the proofs and we explained the reason in the paper.
+defined in the proofs and we explained the reason in the paper.
+
+---
+
+Alternatively, you may run `coqchk -R . Top Top.theorems -o -silent` under the project folder as well to check all the axioms we introduced in the proofs.
+
+For the main system `cast_main` it will return:
+
+```
+CONTEXT SUMMARY
+===============
+
+* Theory: Set is predicative
+  
+* Axioms:
+    Metalib.MetatheoryAtom.AtomSetImpl.union_3
+    Metalib.MetatheoryAtom.AtomSetImpl.union_2
+    Metalib.MetatheoryAtom.AtomSetImpl.union_1
+    Metalib.MetatheoryAtom.AtomSetImpl.subset
+    Metalib.MetatheoryAtom.AtomSetImpl.remove
+    Metalib.MetatheoryAtom.AtomSetImpl.eq_trans
+    Metalib.MetatheoryAtom.AtomSetImpl.fold_1
+    Metalib.MetatheoryAtom.AtomSetImpl.filter
+    Metalib.MetatheoryAtom.AtomSetImpl.eq_sym
+    Metalib.MetatheoryAtom.AtomSetImpl.eq_dec
+    Metalib.MetatheoryAtom.AtomSetImpl.diff_3
+    Metalib.MetatheoryAtom.AtomSetImpl.diff_2
+    Metalib.MetatheoryAtom.AtomSetImpl.diff_1
+    Metalib.MetatheoryAtom.AtomSetImpl.choose_2
+    Metalib.MetatheoryAtom.AtomSetImpl.choose_1
+    Metalib.MetatheoryAtom.AtomSetImpl.choose
+    Coq.micromega.ZifyInst.ltac_gen_subproof9
+    Coq.micromega.ZifyInst.ltac_gen_subproof8
+    Coq.micromega.ZifyInst.ltac_gen_subproof7
+    Coq.micromega.ZifyInst.ltac_gen_subproof6
+    Coq.micromega.ZifyInst.ltac_gen_subproof5
+    Coq.micromega.ZifyInst.ltac_gen_subproof4
+    Coq.micromega.ZifyInst.ltac_gen_subproof3
+    Coq.micromega.ZifyInst.ltac_gen_subproof2
+    Coq.micromega.ZifyInst.ltac_gen_subproof1
+    Coq.micromega.ZifyInst.ltac_gen_subproof0
+    Metalib.MetatheoryAtom.AtomSetImpl.subset_2
+    Metalib.MetatheoryAtom.AtomSetImpl.subset_1
+    Metalib.MetatheoryAtom.AtomSetImpl.elements
+    Metalib.MetatheoryAtom.AtomSetImpl.is_empty_2
+    Metalib.MetatheoryAtom.AtomSetImpl.is_empty_1
+    Metalib.MetatheoryAtom.AtomSetImpl.union
+    Metalib.MetatheoryAtom.AtomSetImpl.mem_2
+    Metalib.MetatheoryAtom.AtomSetImpl.mem_1
+    Metalib.MetatheoryAtom.AtomSetImpl.inter
+    Metalib.MetatheoryAtom.AtomSetImpl.equal
+    Metalib.MetatheoryAtom.AtomSetImpl.empty
+    Metalib.MetatheoryAtom.AtomSetImpl.add_3
+    Metalib.MetatheoryAtom.AtomSetImpl.add_2
+    Metalib.MetatheoryAtom.AtomSetImpl.add_1
+    Coq.Logic.ProofIrrelevance.proof_irrelevance
+    Metalib.MetatheoryAtom.AtomSetImpl.fold
+    Metalib.MetatheoryAtom.AtomSetImpl.diff
+    Metalib.MetatheoryAtom.AtomSetImpl.In_1
+    Metalib.MetatheoryAtom.AtomSetImpl.mem
+    Metalib.MetatheoryAtom.AtomSetImpl.add
+    Metalib.MetatheoryAtom.AtomSetImpl.In
+    Metalib.MetatheoryAtom.AtomSetImpl.t
+    Metalib.MetatheoryAtom.AtomSetImpl.for_all_2
+    Metalib.MetatheoryAtom.AtomSetImpl.for_all_1
+    Metalib.MetatheoryAtom.AtomSetImpl.cardinal
+    Metalib.MetatheoryAtom.AtomSetImpl.singleton_2
+    Metalib.MetatheoryAtom.AtomSetImpl.singleton_1
+    Coq.Logic.FunctionalExtensionality.functional_extensionality_dep
+    Metalib.MetatheoryAtom.AtomSetImpl.cardinal_1
+    Metalib.MetatheoryAtom.AtomSetImpl.inter_3
+    Metalib.MetatheoryAtom.AtomSetImpl.inter_2
+    Metalib.MetatheoryAtom.AtomSetImpl.inter_1
+    Metalib.MetatheoryAtom.AtomSetImpl.elements_3w
+    Metalib.MetatheoryAtom.AtomSetImpl.filter_3
+    Metalib.MetatheoryAtom.AtomSetImpl.filter_2
+    Metalib.MetatheoryAtom.AtomSetImpl.filter_1
+    Metalib.MetatheoryAtom.AtomSetImpl.for_all
+    Metalib.MetatheoryAtom.AtomSetImpl.exists_
+    Metalib.MetatheoryAtom.AtomSetImpl.partition_2
+    Metalib.MetatheoryAtom.AtomSetImpl.partition_1
+    Metalib.MetatheoryAtom.AtomSetImpl.equal_2
+    Metalib.MetatheoryAtom.AtomSetImpl.equal_1
+    Metalib.MetatheoryAtom.AtomSetImpl.eq_refl
+    Metalib.MetatheoryAtom.AtomSetImpl.empty_1
+    Metalib.MetatheoryAtom.AtomSetImpl.is_empty
+    Coq.micromega.ZifyInst.ltac_gen_subproof22
+    Coq.micromega.ZifyInst.ltac_gen_subproof21
+    Coq.micromega.ZifyInst.ltac_gen_subproof20
+    Coq.micromega.ZifyInst.ltac_gen_subproof19
+    Coq.micromega.ZifyInst.ltac_gen_subproof18
+    Coq.micromega.ZifyInst.ltac_gen_subproof17
+    Coq.micromega.ZifyInst.ltac_gen_subproof16
+    Coq.micromega.ZifyInst.ltac_gen_subproof15
+    Coq.micromega.ZifyInst.ltac_gen_subproof14
+    Coq.micromega.ZifyInst.ltac_gen_subproof13
+    Coq.micromega.ZifyInst.ltac_gen_subproof12
+    Coq.micromega.ZifyInst.ltac_gen_subproof11
+    Coq.micromega.ZifyInst.ltac_gen_subproof10
+    Coq.Logic.JMeq.JMeq_eq
+    Coq.Logic.Eqdep.Eq_rect_eq.eq_rect_eq
+    Coq.micromega.ZifyInst.ltac_gen_subproof
+    Metalib.MetatheoryAtom.AtomSetImpl.exists_2
+    Metalib.MetatheoryAtom.AtomSetImpl.exists_1
+    Metalib.MetatheoryAtom.AtomSetImpl.remove_3
+    Metalib.MetatheoryAtom.AtomSetImpl.remove_2
+    Metalib.MetatheoryAtom.AtomSetImpl.remove_1
+    Metalib.MetatheoryAtom.AtomSetImpl.partition
+    Metalib.MetatheoryAtom.AtomSetImpl.elements_2
+    Metalib.MetatheoryAtom.AtomSetImpl.elements_1
+    Metalib.MetatheoryAtom.AtomSetImpl.singleton
+  
+* Constants/Inductives relying on type-in-type: <none>
+  
+* Constants/Inductives relying on unsafe (co)fixpoints: <none>
+  
+* Inductives whose positivity is assumed: <none>
+```
+
+Except those introduced by `Lia` (the `Coq.micromega` series) or `Metalib`, the axioms introduced by the Coq standard library are:
+
+| Axiom | File | Notes |
+| ------- | ----- | ----------- |
+| `functional_extensionality_dep` | rules_inf.v | Generated by `LNgen` |
+| `proof_irrelevance` | LibTactics.v |  |
+| `eq_rect_eq` | LibTactics.v | By importing `Coq.Program.Equality` for `dependent induction`<br>Equivalent to `UIP`, corollary of `proof_irrelevance` |
+| `JMeq_eq` | LibTactics.v | By importing `Coq.Program.Equality` for `dependent induction`<br>Corollary of `eq_rect_eq` |
+
+For the subtyping system `cast_sub`, it will also return `Top.theorems.subtyping_decomposition` in addition to the above results.
 
 
 ### Check Unproved Hypotheses
 
-Run `grep -r "Admitted\." .` under `/home/fulliso`, and there will be no output, indicating that all the proofs are complete.
+Run `grep -Ir "Admitted\." .` under `/home/fulliso`, and there will be no output, indicating that all the proofs are complete.
 
 
 ### Other `make` Commands

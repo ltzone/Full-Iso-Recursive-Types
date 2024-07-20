@@ -2699,10 +2699,6 @@ invert_tactic H (fun H => invert keep H as I1 I2 I3).
 
 Require Import Coq.Program.Equality.
 
-(* Axiom inj_pair2 :  (* is in fact derivable from the axioms in LibAxiom.v *)
-forall (U : Type) (P : U -> Type) (p : U) (x y : P p),
-existT P p x = existT P p y -> x = y. *)
-(* Proof using. apply Eqdep.EqdepTheory.inj_pair2. Qed. *)
 
 Ltac inverts_tactic H i1 i2 i3 i4 i5 i6 :=
 let rec go i1 i2 i3 i4 i5 i6 :=
@@ -4840,117 +4836,6 @@ end.
 
 Tactic Notation "clears_last" constr(N) :=
 clears_last_base N.
-
-(* ################################################################# *)
-(** * Tactics for Development Purposes *)
-
-(* ================================================================= *)
-(** ** Skipping Subgoals *)
-
-(** SF DOES NOT NEED an alternative implementation of the [skip] tactic. *)
-
-(** The [skip] tactic can be used at any time to admit the current
-  goal. Unlike [admit], it does not require ending the proof with
-  [Admitted] instead of [Qed]. It thus saves the pain of renaming [Qed]
-  into [Admitted] and vice-versa all the time.
-
-  The implementation of [skip] relies on an axiom [False].
-  To obtain a safe development, it suffices to replace [False] with [True]
-  in the statement of that axiom.
-
-  Note that it is still necessary to instantiate all the existential
-  variables introduced by other tactics in order for [Qed] to be accepted.
-*)
-
-(** To obtain a safe development, change to [skip_axiom : True] *)
-(* Axiom skip_axiom : True.
-
-Ltac skip_with_axiom :=
-elimtype False; apply skip_axiom.
-
-Tactic Notation "skip" :=
-skip_with_axiom.
-
-(** To use traditional [admit] instead of [skip] in the tactics defined below,
-  uncomment the following definition, to bind [skip] to [admit]. *)
-(*
-Tactic Notation "skip" :=
-admit.
-*)
-
-(** [demo] is like [admit] but it documents the fact that admit is intended *)
-
-Tactic Notation "demo" :=
-skip.
-
-(** [admits H: T] adds an assumption named [H] of type [T] to the
-  current context, blindly assuming that it is true.
-  [admit: T] is another possible syntax.
-  Note that H may be an intro pattern. *)
-
-Tactic Notation "admits" simple_intropattern(I) ":" constr(T) :=
-asserts I: T; [ skip | ].
-Tactic Notation "admits" ":" constr(T) :=
-let H := fresh "TEMP" in admits H: T.
-Tactic Notation "admits" "~" ":" constr(T) :=
-admits: T; auto_tilde.
-Tactic Notation "admits" "*" ":" constr(T) :=
-admits: T; auto_star.
-
-(** [admit_cuts T] simply replaces the current goal with [T]. *)
-
-Tactic Notation "admit_cuts" constr(T) :=
-cuts: T; [ skip | ].
-
-(** [admit_goal H] applies to any goal. It simply assumes
-  the current goal to be true. The assumption is named "H".
-  It is useful to set up proof by induction or coinduction.
-  Syntax [admit_goal] is also accepted.*)
-
-Tactic Notation "admit_goal" ident(H) :=
-match goal with |- ?G => admits H: G end.
-
-Tactic Notation "admit_goal" :=
-let IH := fresh "IH" in admit_goal IH.
-
-(** [admit_rewrite T] can be applied when [T] is an equality.
-  It blindly assumes this equality to be true, and rewrite it in
-  the goal. *)
-
-Tactic Notation "admit_rewrite" constr(T) :=
-let M := fresh "TEMP" in admits M: T; rewrite M; clear M.
-
-(** [admit_rewrite T in H] is similar as [admit_rewrite], except that
-  it rewrites in hypothesis [H]. *)
-
-Tactic Notation "admit_rewrite" constr(T) "in" hyp(H) :=
-let M := fresh "TEMP" in admits M: T; rewrite M in H; clear M.
-
-(** [admit_rewrites_all T] is similar as [admit_rewrite], except that
-  it rewrites everywhere (goal and all hypotheses). *)
-
-Tactic Notation "admit_rewrite_all" constr(T) :=
-let M := fresh "TEMP" in admits M: T; rewrite_all M; clear M.
-
-(** [forwards_nounfold_admit_sides_then E ltac:(fun K => ..)]
-  is like [forwards: E] but it provides the resulting term
-  to a continuation, under the name [K], and it admits
-  any side-condition produced by the instantiation of [E],
-  using the [skip] tactic. *)
-
-Inductive ltac_goal_to_discard := ltac_goal_to_discard_intro.
-
-Ltac forwards_nounfold_admit_sides_then S cont :=
-let MARK := fresh "TEMP" in
-generalize ltac_goal_to_discard_intro;
-intro MARK;
-forwards_nounfold_then S ltac:(fun K =>
-  clear MARK;
-  cont K);
-match goal with
-| MARK: ltac_goal_to_discard |- _ => skip
-| _ => idtac
-end. *)
 
 
 (* ################################################################# *)

@@ -262,7 +262,6 @@ Inductive lc_set_typ : typ -> Set :=
   | lc_set_t_mu : forall A1,
     (forall X1 : typevar, lc_set_typ (open_typ_wrt_typ A1 (t_var_f X1))) ->
     lc_set_typ (t_mu A1).
-
 Scheme lc_typ_ind' := Induction for lc_typ Sort Prop.
 
 Combined Scheme lc_typ_mutind from lc_typ_ind'.
@@ -301,7 +300,6 @@ Inductive lc_set_castop : castop -> Set :=
   | lc_set_c_fixc : forall c1,
     (forall cx1 : castvar, lc_set_castop (open_castop_wrt_castop c1 (c_var_f cx1))) ->
     lc_set_castop (c_fixc c1).
-
 Scheme lc_castop_ind' := Induction for lc_castop Sort Prop.
 
 Combined Scheme lc_castop_mutind from lc_castop_ind'.
@@ -335,7 +333,6 @@ Inductive lc_set_exp : exp -> Set :=
     lc_set_castop c1 ->
     lc_set_exp e1 ->
     lc_set_exp (e_cast c1 e1).
-
 Scheme lc_exp_ind' := Induction for lc_exp Sort Prop.
 
 Combined Scheme lc_exp_mutind from lc_exp_ind'.
@@ -386,7 +383,7 @@ Definition body_exp_wrt_exp e1 := forall x1, lc_exp (open_exp_wrt_exp e1 (e_var_
 
 (** Additional hint declarations. *)
 
-#[export] Hint Resolve plus_le_compat : lngen.
+#[export] Hint Resolve Nat.add_le_mono : lngen.
 
 (** Redefine some tactics. *)
 
@@ -4580,7 +4577,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -4620,7 +4616,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -4662,7 +4657,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -5022,7 +5016,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -5065,7 +5058,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.
@@ -5109,7 +5101,6 @@ match goal with
   | |- _ = _ => reflexivity
   | _ => idtac
 end;
-instantiate;
 (* everything should be easy now *)
 default_simp.
 Qed.

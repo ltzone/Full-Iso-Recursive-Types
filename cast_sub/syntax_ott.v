@@ -734,10 +734,6 @@ Inductive EquiTyping : ctx -> exp -> typ -> Prop :=    (* defn EquiTyping *)
      EquiTyping G e1 (t_arrow A1 A2) ->
      EquiTyping G e2 A1 ->
      EquiTyping G (e_app e1 e2) A2
- | ETyping_eq : forall (G:ctx) (e:exp) (B A:typ),
-     EquiTyping G e A ->
-     eqe2  nil   nil  A B ->
-     EquiTyping G e B
  | ETyping_sub : forall (G:ctx) (e:exp) (B A:typ),
      EquiTyping G e A ->
      ACSubtyping  nil  A B ->

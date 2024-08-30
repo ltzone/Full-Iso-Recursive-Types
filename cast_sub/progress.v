@@ -5,7 +5,6 @@ Require Export LibTactics.
 Require Export subtyping.
 
 
-
 Ltac inv H := inversion H; subst; try solve [
   match goal with
   | [H : value _ |- _ ] => inversion H; auto
@@ -63,6 +62,7 @@ Proof with auto.
     intros. rewrite_alist ((X ~ tt ++ D1) ++ D2 ++ D ). apply H0...
 Qed.
 
+
 Lemma WFT_typsubst: forall D1 D t X U, WFT (D1 ++ X ~ tt ++ D) t -> WFT (D1 ++ D) U -> WFT (D1 ++ D) (typsubst_typ U X t).
 Proof with auto.
   intros. dependent induction H...
@@ -76,6 +76,7 @@ Proof with auto.
       rewrite_alist (nil ++ X0 ~ tt ++ (D1 ++ D)). apply WFT_weakening... }
     { apply WFT_lc_typ in H1... }
 Qed.
+
 
 Theorem TypCast_regular: forall D E A B c, TypCast D E A B c -> WFT D A /\ WFT D B /\ lc_castop c /\ uniq E.
 Proof with auto.
@@ -123,99 +124,7 @@ Proof with auto.
   - destruct_hypos. repeat split...
     { apply AmberSub_regular in H. destruct_hypos.
       apply AmberWFT_WFT... }
-  (* - destruct_hypos. repeat split...
-    { apply TypCast_regular in H1.
-      destruct_hypos... }
-    { apply TypCast_regular in H.
-      apply TypCast_regular in H1.
-      destruct_hypos... } *)
 Qed.
-
-(* 
-Lemma wf_amber_comm1: forall X Y A E1 E2,
-  AmberWFT (E1 ++ [(X, Y)] ++ E2) A ->
-  AmberWFT (E1 ++ [(X, Y)] ++ E2) (typsubst_typ (t_var_f Y) X A).
-Proof with auto.
-  intros.
-  dependent induction H...
-  - simpl. destruct (X0==X)... 
-    + subst.
-      apply AWFT_varr with (X:=X) (Y:=Y)...
-      apply in_or_app. right. left...
-    + apply AWFT_varl with (X:=X0) (Y:=Y0)...
-  - simpl. destruct (Y0==X)...
-    + subst. apply AWFT_varr with (X:=X) (Y:=Y)...
-      apply in_or_app. right. left...
-    + apply AWFT_varr with (X:=X0) (Y:=Y0)...
-  - cbn [typsubst_typ]. constructor.
-    + apply IHAmberWFT1...
-    + apply IHAmberWFT2...
-  - cbn [typsubst_typ].
-    apply AWFT_rec with (L:=L \u {{ X }} )(Y:=Y0)...
-    intros. rewrite typsubst_typ_open_typ_wrt_typ_var...
-    { rewrite_alist ((X0 ~ Y0 ++ E1) ++ [(X, Y)] ++ E2). apply H0...
-    }
-Qed.
-
-
-Lemma wf_amber_comm2: forall X Y A E1 E2,
-  AmberWFT (E1 ++ [(X, Y)] ++ E2) A ->
-  AmberWFT (E1 ++ [(X, Y)] ++ E2) (typsubst_typ (t_var_f X) Y A).
-Proof with auto.
-  intros.
-  dependent induction H...
-  - simpl. destruct (X0==Y)... 
-    + subst.
-      apply AWFT_varl with (X:=X) (Y:=Y)...
-      apply in_or_app. right. left...
-    + apply AWFT_varl with (X:=X0) (Y:=Y0)...
-  - simpl. destruct (Y0==Y)...
-    + subst. apply AWFT_varl with (X:=X) (Y:=Y)...
-      apply in_or_app. right. left...
-    + apply AWFT_varr with (X:=X0) (Y:=Y0)...
-  - cbn [typsubst_typ]. constructor.
-    + apply IHAmberWFT1...
-    + apply IHAmberWFT2...
-  - cbn [typsubst_typ].
-    apply AWFT_rec with (L:=L \u {{ X }} \u {{Y}})(Y:=Y0)...
-    intros. rewrite typsubst_typ_open_typ_wrt_typ_var...
-    { rewrite_alist ((X0 ~ Y0 ++ E1) ++ [(X, Y)] ++ E2). apply H0...
-    }
-Qed.
-
-Lemma sam_regular : forall E A B,
-    AmberSubtyping E A B -> 
-    AmberWF E /\ AmberWFT E A /\ AmberWFT E B.
-Proof with auto.
-  intros.
-  inductions H...
-  - destruct_hypos...
-  - repeat split...
-    + eapply AWFT_varl;eassumption.
-    + eapply AWFT_varr;eassumption.
-  - repeat split...
-    + pick_fresh X. specialize_x_and_L X L.
-      pick_fresh Y. specialize_x_and_L Y (L \u singleton X).
-      destruct_hypos.
-      inv H0...
-    + 
-      pick_fresh Y.
-      apply AWFT_rec with (L:=L \u {{Y}}) (Y:=Y)...
-      intros.
-      specialize_x_and_L Y L.
-      specialize_x_and_L X (L \u {{Y}}).
-      destruct_hypos...
-    +
-      pick_fresh Y.
-      apply AWFT_rec with (L:=L \u {{Y}}) (Y:=Y)...
-      intros.
-      specialize_x_and_L Y L.
-      specialize_x_and_L X (L \u {{Y}}).
-      destruct_hypos...
-      rewrite typsubst_typ_intro with (X1:=Y)...
-      rewrite_alist (nil ++ [(X, Y)] ++ AE).
-      apply wf_amber_comm2...
-Qed. *)
 
 
 Theorem typing_regular: forall G e t, Typing G e t ->
@@ -268,7 +177,6 @@ Proof.
   - inv H. right. exists c1 c2 e. reflexivity.
   - inv H. applys* IHTyp...
 Qed.
-
 
 
 Lemma canonical_form_mu : forall e A,
@@ -334,44 +242,28 @@ Proof with eauto.
         }
       *
         destruct H2 as [e2' ?]. right. exists (e_app e1 e2')...
-      
     +
       (* e1 e2 ~~~> e1' e2 *)
       destruct H1 as [e1' ?]. right. exists (e_app e1' e2)...
-  (* -
-    (* fix *)
-    right. exists (open_exp_wrt_exp e (e_fixpoint A e))... *)
-    
   -
     (* cast *)
     destruct IHTyping... 
     +
       (* cast [c] (cast [fold (μ a. A2)] e0) *)
       inversion H0;subst...
-      (* * 
-        (* id *)
-        right...
-      *
-        (* arrow *)
-        left. get_lc. inv Hwf1. inv H9. *)
       *
         (* unfold *)
         forwards (e'&A'&?): canonical_form_mu H...
         subst e. right.
         exists e'.
         get_lc. inv H5.
-        (* apply Red_castelim... *)
       * 
         (* seq *)
         right. exists (e_cast c2 (e_cast c1 e)).
         get_lc. inv Hwf1.
-        (* apply Red_cast_seq... *)
       *
         (* assump *)
         inv H5.
-      
     +
       destruct H1 as [e' ?]...
-      (* right. exists (e_cast c e')...
-      inv Hwf1. apply Red_cast... *)
 Qed.

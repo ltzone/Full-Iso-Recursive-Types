@@ -15,18 +15,6 @@ Proof with auto.
 Qed.
 
 
-(* Lemma WFTmE_weakening: forall D E F G,
-  WFTmE D (F ++ E ) ->
-  WFTmE D (F ++ G ++ E).
-Proof with auto.
-  intros.
-  induction F...
-  - inversion H...
-  - inversion H;subst.
-    constructor...
-Qed. *)
-
-
 Lemma Typing_weakening: forall F E1 E2 e T,
   WFTmE (E1 ++ F ++ E2) ->
   Typing (E1 ++ E2) e T ->
@@ -49,15 +37,11 @@ Proof with auto.
 Qed.
 
 
-
-
 Lemma revE_dist: forall E1 E2,
   reverse_E (E1 ++ E2) = (reverse_E E1) ++ (reverse_E E2).
 Proof.
   apply map_app.
 Qed.
-
-
 
 
 Lemma typing_through_subst_ee : forall F U E x T e u,
@@ -93,7 +77,6 @@ Proof with eauto.
     rewrite_alist (([(x0, A1)] ++ F) ++ E).
     apply H1...
 Qed.
-
 
 
 Lemma In_revE: forall cx A B E,
@@ -166,7 +149,6 @@ Proof with auto.
         eapply IHTyping...
         apply Typing_sub with (A:=A1)...
       }
-
   -
     (* cast *)
     inv H1.

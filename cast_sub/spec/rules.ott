@@ -258,14 +258,6 @@ formula :: 'formula_' ::=
       {{ tex [[AE]] , [[X]] <: [[Y]] \vdash [[A]] }}
 
 
-% embed {{ coq
-
-% Definition reverse_E (E: cctx) :=
-%   map (fun v => match v with (A, B) =>  (B, A) end) E.
-
-% }}
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Well Formed Type
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -595,17 +587,6 @@ value (cast [ c1 -> c2 ] e)
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% defns
-% CValues :: '' ::=
-
-% defn
-% cvalue m e ::  :: cvalue :: CV_
-% {{ com CValues }} {{ tex \textsf{cvalue } [[m]] \  [[e]] }}
-% by
-
-
-
-
 defns
 Reduction :: '' ::=
 
@@ -658,8 +639,6 @@ value v
 ----------------- :: castid
 cast [ id ] v --> v
 
-
-% cast [fix x. c] e -> cast [c [x := fix x. c] ] e
 
 value e
 ----------------- :: castfix

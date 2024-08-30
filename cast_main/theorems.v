@@ -664,7 +664,7 @@ Theorem erase_reduction: forall e t e' v,
   e ==>* v -> value v ->
   exists v', e' ==>* v' /\ EquiTypingC nil v t v' 
   (* /\ value v' *)
-  .
+.
 Proof with auto.
   intros.
   apply clos_rt_rt1n in H0. gen e'.

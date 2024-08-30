@@ -61,18 +61,7 @@ Proof with auto.
   -
     constructor...
     apply erase_lc_exp in H0...
-  (* -
-    constructor...
-    apply erase_lc_exp in H0... *)
 Qed.
-
-(* Lemma erase_cvalue: forall m v, cvalue m v -> value (erase v).
-Proof with auto.
-  intros.
-  induction H;simpl...
-  -
-    apply erase_value...
-Qed. *)
 
 
 #[global] Hint Resolve erase_lc_exp erase_value : core.

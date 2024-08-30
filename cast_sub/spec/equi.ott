@@ -1,7 +1,3 @@
-% grammar
-% invoking -merge true with -coq_lngen true will fail the latter option
-% formula :: 'formula_' ::=
-
 embed {{ coq
 
 Notation unfold_mu t := 
@@ -190,7 +186,6 @@ G |- e : A |> e'
 [] |- A <: B
 ----::isub
 G |- e : B |> e'
-
 
 
 

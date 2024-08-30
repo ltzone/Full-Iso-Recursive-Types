@@ -27,7 +27,6 @@ Qed.
 (* Soundness and Completeness of TypCast *)
 
 
-
 Theorem TypCast_soundness: forall D A B c, 
   TypCast D nil A B c ->
   eqe2 D nil A B.
@@ -196,7 +195,6 @@ Proof with auto.
       2:{ apply degree_typ_wrt_typ_of_lc_typ  in Hlc.
           apply degree_typ_wrt_typ_open_typ_wrt_typ_inv in Hlc...
       }
-      (* rewrite Infra.subst_tt_intro with (X:=Y) in H3... *)
       replace ((X,Y) :: AE) with (nil ++ (X ~ Y) ++ AE)  in H4...
       apply AmberBase.wf_amber_comm2 in H4.
       rewrite <- Infra.subst_tt_intro in H4...
@@ -240,9 +238,6 @@ Proof with auto.
     destruct IHEquiTyping2 as [e2' [Hty2 He2]].
     exists (e_app e1' e2'). split;simpl;try congruence.
     apply Typing_app with (A1:=A1)...
-  (* -
-    destruct IHEquiTyping as [e' [Hty He]].
-    forwards*: TypCast_completeness H0. *)
   -
     destruct IHEquiTyping as [e' [Hty He]].
     forwards: subtyping_decomposition (@nil (atom * unit)) H0...
@@ -283,18 +278,6 @@ Proof with auto.
     + destruct_hypos. apply Typing_sub with (A:=A)...
     + destruct_hypos. apply ETyping_sub with (A:=A)...
       apply AmberSubtyping_ACSubtyping...
-  (* - split...  
-    + destruct_hypos. apply Typing_cast with (A:=C2)...
-      apply Typing_sub with (A:=C1)...
-      apply Typing_cast with (A:=A)...
-    + destruct_hypos. apply ETyping_sub with (A:=A)...
-      apply TypCast_soundness in H.
-      apply TypCast_soundness in H1.
-      eapply ACSub_trans.
-      { apply ACSub_eq;try eassumption... }
-      eapply ACSub_trans.
-      { apply AmberSubtyping_ACSubtyping;eassumption. }
-      { apply ACSub_eq;try eassumption... } *)
 Qed.
 
 
@@ -317,7 +300,6 @@ Proof with auto.
   - apply ECTyping_app with (A1:=A1)...
   - apply ECTyping_eq with (A:=A)...
   - apply ECTyping_isub with (A:=A)...
-  (* - apply ECTyping_sub with (A:=A) (C1:=C1) (C2:=C2)... *)
 Qed.
 
 
@@ -334,7 +316,6 @@ Proof with eauto using WFTmE_strengthening.
     + subst. rewrite_alist (nil ++ G1 ++ G2). 
       apply ECTyping_weakening;rewrite app_nil_l...
       analyze_binds_uniq H0... { applys~ WFTmE_uniq... }
-      (* inv Hty2... *)
   - apply ECTyping_abs with (L:=L \u dom (G1 ++ G2) \u {{x}})...
     intros. rewrite_alist ((x0 ~ A1 ++ G1) ++ G2).
     rewrite !subst_exp_open_exp_wrt_exp_var...
@@ -374,12 +355,6 @@ Proof with auto.
     destruct IHTyp2 as [e2' Hty2].
     exists (e_app e1' e2').
     apply ECTyping_app with (A1:=A1)...
-  (* -
-    apply TypCast_completeness in H.
-    destruct H as [c' ?].
-    destruct IHTyp as [e' ?].
-    exists (e_cast c' e').
-    apply ECTyping_eq with (A:=A)... *)
   -
     destruct IHTyp as [e' ?].
     forwards*: subtyping_decomposition (@nil (atom * unit)) H...
@@ -401,9 +376,6 @@ Proof with auto.
   - intros [e' Hty]. apply EquiTypingC_sem in Hty...
     destruct Hty...
 Qed.
-
-
-
 
 
 Lemma ETyping_regular: forall G e t,
@@ -438,14 +410,13 @@ Qed.
 
 
 
-
 (*************************************************************************************************************************)
 (* To prove reduction_e2i, we define a new Equi Typing relation, that annotate equi-typing judgements with the related full iso terms *)
 
 
-
 Definition terminate (e:exp) : Prop :=
   exists v, value v /\ e ==>* v.
+
 
 Lemma terminate_app_inv1: forall A e1 e2,
   Typing nil (e_app e1 e2) A ->
@@ -470,7 +441,6 @@ Proof with auto.
   + exists (e_cast (c_arrow c1 c2) e0).
     split... apply rt_refl.
 Qed.
-
 
 
 Lemma terminate_app_inv2: forall A e1 e2,
@@ -499,9 +469,6 @@ Proof with auto.
 Qed.
 
 
-
-
-
 Lemma Red_ctx_cast: forall c e e', lc_castop c ->
   e ==>* e' -> e_cast c e ==>* e_cast c e'.
 Proof with auto.
@@ -524,6 +491,7 @@ Proof with auto.
     apply t_step. constructor...
 Qed.
 
+
 Lemma Red_ctx_appl: forall e1 e1' e2, lc_exp e2 ->
   e1 ==>* e1' -> e_app e1 e2 ==>* e_app e1' e2.
 Proof with auto.
@@ -534,6 +502,7 @@ Proof with auto.
   - applys rt_trans IHclos_refl_trans_1n.
     apply rt_step. constructor...
 Qed.
+
 
 Lemma Red_ctx_appl': forall e1 e1' e2, lc_exp e2 ->
   e1 ==>+ e1' -> e_app e1 e2 ==>+ e_app e1' e2.
@@ -546,6 +515,7 @@ Proof with auto.
     apply t_step. constructor...
 Qed.
 
+
 Lemma Red_ctx_appr: forall e1 e2 e2', value e1 ->
   e2 ==>* e2' -> e_app e1 e2 ==>* e_app e1 e2'.
 Proof with auto.
@@ -557,6 +527,7 @@ Proof with auto.
     apply rt_step. constructor...
 Qed.
 
+
 Lemma Red_ctx_appr': forall e1 e2 e2', value e1 ->
   e2 ==>+ e2' -> e_app e1 e2 ==>+ e_app e1 e2'.
 Proof with auto.
@@ -567,7 +538,6 @@ Proof with auto.
   - applys t_trans IHclos_trans_1n.
     apply t_step. constructor...
 Qed.
-
 
 
 Lemma ECTyping_value: forall e t e',
@@ -590,7 +560,6 @@ Proof with auto.
     + apply ECTyping_abs with (L:=L)...
   - inv Hval...
   - gen e e'. inductions H;intros.
-    (* + inv H. *)
     + forwards (v' & ? & ? & ?): IHHty Hval...
       exists v'. split...
       applys rt_trans (e_cast c_id v').
@@ -682,7 +651,6 @@ Qed.
 
 
 
-
 Lemma value_lc_exp: forall v, value v -> lc_exp v.
 Proof with auto.
   introv Hval. inductions Hval...
@@ -708,10 +676,10 @@ Proof with auto.
 Qed.
 
 Lemma reduction_app: forall A e1 e1' e2 e2' A1 A2,
-EquiTypingC nil (e_abs A e1) (t_arrow A1 A2) e1' ->
-EquiTypingC nil e2 A1 e2' ->
-value e1' -> value e2 ->
-exists e', (e_app e1' e2') ==>+ e' /\ EquiTypingC nil (open_exp_wrt_exp e1 e2) A2 e'.
+  EquiTypingC nil (e_abs A e1) (t_arrow A1 A2) e1' ->
+  EquiTypingC nil e2 A1 e2' ->
+  value e1' -> value e2 ->
+  exists e', (e_app e1' e2') ==>+ e' /\ EquiTypingC nil (open_exp_wrt_exp e1 e2) A2 e'.
 Proof with auto.
   introv Hty1 Hty2 Hval1 Hval2.
   gen e2 e2'. inductions Hty1;intros.
@@ -733,8 +701,6 @@ Proof with auto.
       apply ECTyping_subst with (A:=A1)...
     }
   -
-    (* assert (exists B1 B2, A0 = t_arrow B1 B2) by admit.
-    destruct H0 as [B1 [B2 ?]]. subst. *)
     forwards (v2' & Hred2 & Hval2' & Hty2'): ECTyping_value Hty2...
     forwards (Hty2e' & Hty2i'): EquiTypingC_sem Hty2'.
     forwards (Hty2e & Hty2i): EquiTypingC_sem Hty2.
@@ -760,13 +726,14 @@ Proof with auto.
     exists e0. split*.
 Qed.
 
+
 Inductive equi_expr: exp -> Prop :=
-| ee_lit : forall i, equi_expr (e_lit i)
-| ee_var_f : forall x, equi_expr (e_var_f x)
-| ee_abs : forall A e, 
-    forall x, (equi_expr (open_exp_wrt_exp e (e_var_f x))) -> 
-      equi_expr (e_abs A e)
-| ee_app : forall e1 e2, equi_expr e1 -> equi_expr e2 -> equi_expr (e_app e1 e2)
+  | ee_lit : forall i, equi_expr (e_lit i)
+  | ee_var_f : forall x, equi_expr (e_var_f x)
+  | ee_abs : forall A e, 
+      forall x, (equi_expr (open_exp_wrt_exp e (e_var_f x))) -> 
+        equi_expr (e_abs A e)
+  | ee_app : forall e1 e2, equi_expr e1 -> equi_expr e2 -> equi_expr (e_app e1 e2)
 .
 
 Lemma ECTyping_equi_expr_lc: forall G e t e',
@@ -860,7 +827,7 @@ Theorem erase_reduction: forall e t e' v,
   e ==>* v -> value v ->
   exists v', e' ==>* v' /\ EquiTypingC nil v t v' 
   (* /\ value v' *)
-  .
+.
 Proof with auto.
   intros.
   apply clos_rt_rt1n in H0. gen e'.

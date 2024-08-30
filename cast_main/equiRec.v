@@ -8,7 +8,7 @@ Require Export erasure.
 
 
 
-Inductive eqe : tctx -> actx -> typ -> typ -> Prop :=    (* defn eqe *)
+Inductive eqe : tctx -> actx -> typ -> typ -> Prop :=
  | e_assump : forall (D:tctx) (H:actx) (A B:typ),
       In ( A ,  B )  H  ->
      WFT D A ->
@@ -150,9 +150,6 @@ Proof with auto.
   - apply e_assump... apply in_app_or in H0. destruct H0.
     -- apply in_or_app...
     -- apply in_or_app; right; apply in_or_app...
-  (* - apply e_assump2. apply in_app_or in H. destruct H.
-    -- apply in_or_app...
-    -- apply in_or_app; right; apply in_or_app... *)
   - apply e_trans with B...
   - apply e_arrfix.
     --
@@ -192,7 +189,6 @@ Proof with auto.
   - apply e_trans with B...
   - apply e_assump... apply in_remove_cx with cx...
   - pick_fresh cx. specialize_x_and_L cx L. simpl in *. apply e_arrfix... 
-    (* rewrite <- revE_to_revA...  *)
 Qed.
 
 
@@ -203,27 +199,6 @@ Proof.
   - exists (@nil (atom * (typ * typ))). reflexivity.
   - destruct IHE as [cs' IHE]. pick_fresh i. exists ((i, a) :: cs'). simpl. f_equal. assumption.
 Qed.
-
-
-(* 
-
-
-
-mu x. mu y. y -> x == mu x. x -> x
-
-
-dual : fix cx. fold -> cx 
- = fix cx. unfold -> cx
-
-
-*)
-
-(* forall x, A, B in E -> Tyeq A B *)
-(* forall x, A, B in E -> eqe A B *)
-(* need completeness to prove symmetry *)
-(* need symmetry to prove completeness *)
-
-
 
 
 Lemma rev_cast_open_aux: forall c n cx, 
@@ -365,12 +340,6 @@ Lemma TypCast_narrowing': forall D T1 T2 E1 E2 E c,
 Proof with auto.
   intros.
   generalize dependent E. inductions H; intros...
-  (* -
-    (* arrow *)
-    apply TCast_arrow...
-    repeat rewrite revE_dist. apply IHTypCast1.
-    + rewrite revE_dist...
-    + repeat rewrite <- revE_dist. apply uniq_map_2... *)
   -
     (* seq *)
     apply TCast_seq with (B:=B)...
@@ -533,8 +502,6 @@ Proof with auto.
           rewrite app_nil_l... left... }
       rewrite_alist ((cx ~ (t_arrow A1 A2, t_arrow B1 B2)) ++ (cx0 ~ (t_arrow A1 A2, t_arrow B1 B2)) ++ cs).
       apply TypCast_narrowing...
-      (* { forwards (?&?): eqe_regular H0.
-        forwards (?&?): eqe_regular H1... } *)
     + intros. rewrite <- castsubst_castop_spec.
       eapply subst_castop with (E1:=nil) (a:=t_arrow A1 A2) (b:=t_arrow B1 B2).
       2:{ forwards (?&?): eqe_regular H0.
@@ -543,9 +510,4 @@ Proof with auto.
           rewrite app_nil_l... left... }
       rewrite_alist ((cx ~ (t_arrow A1 A2, t_arrow B1 B2)) ++ (cx0 ~ (t_arrow A1 A2, t_arrow B1 B2)) ++ cs).
       apply TypCast_narrowing...
-      (* { forwards (?&?): eqe_regular H0.
-        forwards (?&?): eqe_regular H1... } *)
 Qed.
-
-
-

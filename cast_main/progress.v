@@ -5,7 +5,6 @@ Require Export LibTactics.
 Require Export rules_inf.
 
 
-
 Ltac inv H := inversion H; subst; try solve [
   match goal with
   | [H : value _ |- _ ] => inversion H; auto
@@ -53,10 +52,12 @@ Proof with auto.
   - analyze_binds H0.
 Qed.
 
+
 Lemma WFT_lc_typ: forall D t, WFT D t -> lc_typ t.
 Proof with auto.
   introv H. induction H...
 Qed.
+
 
 Lemma WFT_weakening: forall D1 D t, WFT (D1 ++ D) t -> forall D2, WFT (D1 ++ D2 ++ D) t.
 Proof with auto.
@@ -66,6 +67,7 @@ Proof with auto.
   - apply WFT_rec with (L:=L \u dom D1)...
     intros. rewrite_alist ((X ~ tt ++ D1) ++ D2 ++ D ). apply H0...
 Qed.
+
 
 Lemma WFT_typsubst: forall D1 D t X U, WFT (D1 ++ X ~ tt ++ D) t -> WFT (D1 ++ D) U -> WFT (D1 ++ D) (typsubst_typ U X t).
 Proof with auto.
@@ -80,6 +82,7 @@ Proof with auto.
       rewrite_alist (nil ++ X0 ~ tt ++ (D1 ++ D)). apply WFT_weakening... }
     { apply WFT_lc_typ in H1... }
 Qed.
+
 
 Theorem TypCast_regular: forall D E A B c, TypCast D E A B c -> WFT D A /\ WFT D B /\ lc_castop c /\ uniq E.
 Proof with auto.
@@ -125,7 +128,6 @@ Proof with auto.
     { apply TypCast_regular in H. destruct_hypos... }
     { constructor... apply TypCast_regular in H. destruct_hypos... } 
 Qed.
-
 
 
 Theorem typing_regular: forall G e t, Typing G e t ->
@@ -174,7 +176,6 @@ Proof.
   - left. exists U1 e. reflexivity.
   - inv H. right. exists c1 c2 e. reflexivity.
 Qed.
-
 
 
 Lemma canonical_form_mu : forall e A,
@@ -236,15 +237,10 @@ Proof with eauto.
           { inv H1. }
         }
       *
-        destruct H2 as [e2' ?]. right. exists (e_app e1 e2')...
-      
+        destruct H2 as [e2' ?]. right. exists (e_app e1 e2')... 
     +
       (* e1 e2 ~~~> e1' e2 *)
       destruct H1 as [e1' ?]. right. exists (e_app e1' e2)...
-  (* -
-    (* fix *)
-    right. exists (open_exp_wrt_exp e (e_fixpoint A e))... *)
-    
   -
     (* cast *)
     destruct IHTyping... 
@@ -267,12 +263,6 @@ Proof with eauto.
           (* cast [x] lit *)
           inversion H6.
         }
-        (* {
-          right.
-          pick_fresh cx.
-          exists (e_cast (open_castop_wrt_castop c0 (c_fixc c0) ) (e_lit i)).
-          apply (Red_castfix)... apply TypCast_regular in H0; destruct_hypos...
-        } *)
       *
         inv H.
         inv H0.
@@ -342,6 +332,4 @@ Proof with eauto.
         }
     +
       destruct H1 as [e' ?]...
-      (* right. exists (e_cast c e')...
-      inv Hwf1. apply Red_cast... *)
 Qed.

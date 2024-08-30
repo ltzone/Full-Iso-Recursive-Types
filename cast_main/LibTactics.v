@@ -4855,7 +4855,3 @@ Tactic Notation "subst" "*" :=
 End LibTacticsCompatibility.
 
 Open Scope nat_scope.
-
-
-
-(* 2021-08-11 15:11 *)
